@@ -37,13 +37,13 @@
     - [X] **웹 접속 확인**: 브라우저에서 `http://localhost:8000` (또는 터미널에 표시된 주소) 접속하여 ADK Web UI가 로드되고 "JarvisDispatcherPlaceholder" 에이전트를 선택할 수 있는지 확인
 
 *   **1.3. (선택사항) 커스텀 웹 UI (FastAPI + React)**
-    - [ ] **FastAPI 앱 생성**: `src/jarvis/interfaces/api/main.py` 파일 생성
+    - [X] **FastAPI 앱 생성**: `src/jarvis/interfaces/api/main.py` 파일 생성
         - 이 파일에서는 `fastapi` 모듈에서 `FastAPI` 클래스를 가져옵니다.
         - `FastAPI` 클래스의 인스턴스를 생성하여 `app` 변수에 할당하고, 제목은 "Jarvis API"로 설정합니다.
         - 루트 경로('/')에 대한 GET 요청 핸들러 함수 `read_root()`를 정의합니다. 이 함수는 "Welcome to Jarvis API" 메시지를 포함한 JSON 응답을 반환합니다.
         - 향후 '/chat' 엔드포인트를 추가할 예정임을 주석으로 표시합니다.
-    - [ ] **실행 스크립트 추가** (`pyproject.toml`의 `[tool.poetry.scripts]` 또는 별도 `run_api.py`)
-    - [ ] **API 서버 실행 테스트**: `uvicorn src.jarvis.interfaces.api.main:app --reload` 명령어로 서버 실행 확인
+    - [X] **실행 스크립트 추가** (`pyproject.toml`의 `[tool.poetry.scripts]` 또는 별도 `run_api.py`)
+    - [X] **API 서버 실행 테스트**: `uvicorn src.jarvis.interfaces.api.main:app --reload` 명령어로 서버 실행 확인
     - [ ] **(후속 작업)** `/chat` 엔드포인트 구현 및 프론트엔드 개발은 별도 계획
 
 ## 2. 입력 처리 및 파싱 계층 (`src/jarvis/components/input_parser.py`)

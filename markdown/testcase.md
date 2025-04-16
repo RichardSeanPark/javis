@@ -68,3 +68,11 @@
 - [X] "adk web ." 명령어 실행 시 웹 서버가 정상적으로 시작되는지 확인
 - [X] 웹 브라우저에서 http://localhost:8000 접속 시 ADK Web UI가 로드되는지 확인
 - [X] JarvisDispatcherPlaceholder 에이전트가 UI에서 선택 가능한지 확인
+
+### 1.3. 커스텀 웹 UI (FastAPI + React) 테스트
+- [X] src/jarvis/interfaces/api/main.py 파일 존재 확인
+- [X] FastAPI 앱 인스턴스가 생성되었는지 확인
+- [X] 루트 경로('/')에 대한 GET 요청 핸들러 함수 정의 확인
+- [X] 실행 스크립트가 추가되었는지 확인 (pyproject.toml 또는 별도 run_api.py)
+- [X] uvicorn으로 API 서버 실행 시 정상 시작되는지 확인
+- [X] "http://localhost:8088/"에 접속하여 "Welcome to Jarvis API" 메시지 확인

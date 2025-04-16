@@ -1,0 +1,27 @@
+[project]
+name = "jarvis"
+version = "0.1.0"
+description = "Jarvis AI Framework - A modular AI assistant framework with multi-language support"
+authors = [
+    {name = "JHM",email = "jhm@example.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = "^3.9"
+dependencies = [
+    "fastapi (>=0.115.12,<0.116.0)",
+    "pydantic (>=2.11.3,<3.0.0)",
+    "uvicorn (>=0.34.1,<0.35.0)",
+    "langdetect (>=1.0.9,<2.0.0)",
+    "pytest (>=8.3.5,<9.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "googletrans-py (>=4.0.0,<5.0.0)",
+    "google-adk (>=0.1.0,<0.2.0)",
+    "google-cloud-aiplatform (>=1.88.0,<2.0.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

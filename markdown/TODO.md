@@ -7,13 +7,13 @@
 - [X] **Poetry 초기화**: 터미널에서 `poetry init` 명령어를 실행하여 프로젝트 설정을 시작하고 `pyproject.toml` 파일을 생성합니다. 대화형 프롬프트에 따라 프로젝트 이름, 버전, 설명 등을 입력합니다.
 - [X] **Git repository 생성**: 터미널에서 github에 repository를 생성합니다.
 - [X] **기본 디렉토리 생성**: 터미널에서 `mkdir src tests docs scripts data diagrams markdown config` 명령어를 실행하여 표준 프로젝트 구조를 만듭니다.
-- [ ] **초기 의존성 추가** (`pyproject.toml` 직접 수정 또는 `poetry add <package_name>` 명령어 사용):
-    - [ ] `google-adk`: Google Agent Development Kit 프레임워크 핵심 라이브러리를 추가합니다.
-    - [ ] `google-cloud-aiplatform`: Vertex AI 서비스(Gemini, Codey 모델 등)에 접근하기 위한 라이브러리를 추가합니다.
-    - [ ] `python-dotenv`: `.env` 파일에서 환경 변수를 로드하기 위한 라이브러리를 추가합니다.
-    - [ ] `fastapi`: (커스텀 웹 UI 선택 시) API 서버 구축을 위한 웹 프레임워크를 추가합니다.
-    - [ ] `uvicorn[standard]`: (커스텀 웹 UI 선택 시) FastAPI 애플리케이션을 실행하기 위한 ASGI 서버를 추가합니다.
-    - [ ] `pydantic`: 데이터 유효성 검사 및 설정을 위한 모델 정의 라이브러리를 추가합니다.
+- [X] **초기 의존성 추가** (`pyproject.toml` 직접 수정 또는 `poetry add <package_name>` 명령어 사용):
+    - [X] `google-adk`: Google Agent Development Kit 프레임워크 핵심 라이브러리를 추가합니다.
+    - [X] `google-cloud-aiplatform`: Vertex AI 서비스(Gemini, Codey 모델 등)에 접근하기 위한 라이브러리를 추가합니다.
+    - [X] `python-dotenv`: `.env` 파일에서 환경 변수를 로드하기 위한 라이브러리를 추가합니다.
+    - [X] `fastapi`: (커스텀 웹 UI 선택 시) API 서버 구축을 위한 웹 프레임워크를 추가합니다.
+    - [X] `uvicorn[standard]`: (커스텀 웹 UI 선택 시) FastAPI 애플리케이션을 실행하기 위한 ASGI 서버를 추가합니다.
+    - [X] `pydantic`: 데이터 유효성 검사 및 설정을 위한 모델 정의 라이브러리를 추가합니다.
 - [ ] **`.gitignore` 파일 생성**: 루트 디렉토리에 `.gitignore` 파일을 생성하고, Python 가상 환경, 컴파일된 파일, IDE 설정 파일, OS 특정 파일, 그리고 중요한 `.env` 파일 등을 Git 추적에서 제외하도록 관련 패턴을 추가합니다. (예: `__pycache__/`, `*.pyc`, `.env`, `.idea/`, `.vscode/`, `*.DS_Store`)
 - [ ] **`README.md` 초기 파일 생성**: 루트 디렉토리에 `README.md` 파일을 생성하고 최소한 프로젝트 제목이라도 작성합니다.
 - [ ] **`.env.example` 파일 생성**: 루트 디렉토리에 `.env.example` 파일을 생성합니다. 이 파일에는 프로젝트 실행에 필요한 환경 변수들의 이름만 목록으로 정의하고, 실제 값은 비워둡니다. 예를 들어 `GEMINI_API_KEY=` 와 `GCP_PROJECT_ID=` 같이 줄을 추가합니다.

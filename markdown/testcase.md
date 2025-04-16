@@ -21,3 +21,11 @@
 - [X] diagrams 디렉토리 존재 확인
 - [X] markdown 디렉토리 존재 확인
 - [X] config 디렉토리 존재 확인
+
+### 0.4. 초기 의존성 추가 테스트
+- [X] google-adk 패키지 설치 확인
+- [X] google-cloud-aiplatform 패키지 설치 확인
+- [X] python-dotenv 패키지 설치 확인
+- [X] fastapi 패키지 설치 확인
+- [X] uvicorn 패키지 설치 확인
+- [X] pydantic 패키지 설치 확인

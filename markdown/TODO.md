@@ -6,7 +6,7 @@
 
 - [X] **Poetry 초기화**: 터미널에서 `poetry init` 명령어를 실행하여 프로젝트 설정을 시작하고 `pyproject.toml` 파일을 생성합니다. 대화형 프롬프트에 따라 프로젝트 이름, 버전, 설명 등을 입력합니다.
 - [X] **Git repository 생성**: 터미널에서 github에 repository를 생성합니다.
-- [ ] **기본 디렉토리 생성**: 터미널에서 `mkdir src tests docs scripts data diagrams markdown config` 명령어를 실행하여 표준 프로젝트 구조를 만듭니다.
+- [X] **기본 디렉토리 생성**: 터미널에서 `mkdir src tests docs scripts data diagrams markdown config` 명령어를 실행하여 표준 프로젝트 구조를 만듭니다.
 - [ ] **초기 의존성 추가** (`pyproject.toml` 직접 수정 또는 `poetry add <package_name>` 명령어 사용):
     - [ ] `google-adk`: Google Agent Development Kit 프레임워크 핵심 라이브러리를 추가합니다.
     - [ ] `google-cloud-aiplatform`: Vertex AI 서비스(Gemini, Codey 모델 등)에 접근하기 위한 라이브러리를 추가합니다.

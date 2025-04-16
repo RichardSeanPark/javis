@@ -1,5 +1,5 @@
 [project]
-name = "jarvis"
+name = "javis"
 version = "0.1.0"
 description = "Jarvis AI Framework - A modular AI assistant framework with multi-language support"
 authors = [

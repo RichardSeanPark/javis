@@ -23,18 +23,18 @@
 ## 1. 사용자 인터페이스 계층 (선택적 초기 구현)
 
 *   **1.1. CLI 인터페이스 (ADK 활용)**
-    - [ ] **파일 생성**: `src/jarvis/__init__.py` 파일 수정하여 최소한의 `root_agent` 임포트 준비
-    - [ ] **임시 에이전트 정의**: `src/jarvis/core/dispatcher.py` 파일 생성 및 임시 `root_agent` 정의 (ADK `Agent` 사용, 간단한 `name`, `description` 설정)
+    - [X] **파일 생성**: `src/jarvis/__init__.py` 파일 수정하여 최소한의 `root_agent` 임포트 준비
+    - [X] **임시 에이전트 정의**: `src/jarvis/core/dispatcher.py` 파일 생성 및 임시 `root_agent` 정의 (ADK `Agent` 사용, 간단한 `name`, `description` 설정)
         - 이 파일에서는 `google.adk` 모듈에서 `Agent` 클래스를 가져옵니다.
         - `root_agent` 변수를 생성하여 `Agent` 클래스의 인스턴스를 할당합니다.
         - 해당 에이전트에 "JarvisDispatcherPlaceholder"라는 이름과 "Jarvis AI Framework Root Agent (Placeholder)"라는 설명을 부여합니다.
-    - [ ] **패키지 노출**: `src/jarvis/__init__.py` 파일에 `from .core.dispatcher import root_agent` 추가
-    - [ ] **실행 테스트**: 프로젝트 루트에서 `adk run .` 실행하여 "JarvisDispatcherPlaceholder" 에이전트가 로드되고 프롬프트가 나타나는지 확인
+    - [X] **패키지 노출**: `src/jarvis/__init__.py` 파일에 `from .core.dispatcher import root_agent` 추가
+    - [X] **실행 테스트**: 프로젝트 루트에서 `adk run .` 실행하여 "JarvisDispatcherPlaceholder" 에이전트가 로드되고 프롬프트가 나타나는지 확인
 
 *   **1.2. 웹 UI (ADK Web 활용)**
-    - [ ] **(선행 작업)** 1.1의 임시 에이전트 정의 완료 필요
-    - [ ] **실행 테스트**: 프로젝트 루트에서 `adk web .` 실행
-    - [ ] **웹 접속 확인**: 브라우저에서 `http://localhost:8000` (또는 터미널에 표시된 주소) 접속하여 ADK Web UI가 로드되고 "JarvisDispatcherPlaceholder" 에이전트를 선택할 수 있는지 확인
+    - [X] **(선행 작업)** 1.1의 임시 에이전트 정의 완료 필요
+    - [X] **실행 테스트**: 프로젝트 루트에서 `adk web .` 실행
+    - [X] **웹 접속 확인**: 브라우저에서 `http://localhost:8000` (또는 터미널에 표시된 주소) 접속하여 ADK Web UI가 로드되고 "JarvisDispatcherPlaceholder" 에이전트를 선택할 수 있는지 확인
 
 *   **1.3. (선택사항) 커스텀 웹 UI (FastAPI + React)**
     - [ ] **FastAPI 앱 생성**: `src/jarvis/interfaces/api/main.py` 파일 생성

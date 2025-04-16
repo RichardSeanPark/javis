@@ -52,3 +52,19 @@
 - [X] src/jarvis/__init__.py 파일 존재 확인
 - [X] core, components, agents, tools, interfaces, models 하위 디렉토리 존재 확인
 - [X] 각 하위 디렉토리에 __init__.py 파일 존재 확인
+
+## 1. 사용자 인터페이스 계층 테스트
+
+### 1.1. CLI 인터페이스 (ADK 활용) 테스트
+- [X] src/jarvis/__init__.py 파일에 root_agent 임포트 확인
+- [X] src/jarvis/core/dispatcher.py 파일 존재 확인
+- [X] root_agent 변수가 Agent 클래스의 인스턴스인지 확인
+- [X] root_agent의 name이 "JarvisDispatcherPlaceholder"인지 확인
+- [X] root_agent의 description이 "Jarvis AI Framework Root Agent (Placeholder)"인지 확인
+- [X] "adk run ." 명령어 실행 시 JarvisDispatcherPlaceholder 에이전트가 로드되는지 확인
+
+### 1.2. 웹 UI (ADK Web 활용) 테스트
+- [X] (선행 작업) 1.1의 임시 에이전트 정의 완료 확인
+- [X] "adk web ." 명령어 실행 시 웹 서버가 정상적으로 시작되는지 확인
+- [X] 웹 브라우저에서 http://localhost:8000 접속 시 ADK Web UI가 로드되는지 확인
+- [X] JarvisDispatcherPlaceholder 에이전트가 UI에서 선택 가능한지 확인

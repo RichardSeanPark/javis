@@ -1,0 +1,29 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 아래의 순서대로 반드시 진행
+- 시작전 항상 anaconda env를 javis로 access할 것.
+- TODO.md 파일의 항목 하나씩 진행.
+- 코드 구현 또는 수정 완료 후 testcase-guide.md 아주 자세히 분석.
+- testcase-guide.md의 분석한 내용에 진행.
+- TODO.md 해당 항목 구현 완료 및 해당 testcase-guide.md에 맞게 완료 후 TODO.md의 해당 항목 체크 박스에 체크.
+- TODO.md의 해당 항목 체크 박스 체크 완료 후 git에 add, commit, push 할 것.
+- 순서 반드시 지킬 것.
+
+# 유의사항
+- github에 대한 토큰은 "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" 사용.
+- TODO.md 파일의 항목 여러개를 한꺼번에 진행 절대 금지.
+- 코드 구현 전에 testcase 작성 절대 금지.
+- 지시사항 이외에 코드 변경 절대 금지.
+- step by step으로 진행.
+- 설명은 한글로 할 것.
+
+# 참고자료
+- @javis_ai_framework_analysis.md 
+- @ubuntu_jarvis_ai_framework_design.md
+- @PLAN.md
+- google-agent-development-kit 문서 참조
+- google-adk-python-sample 문서 참조
+- google-a2a 문서 참조

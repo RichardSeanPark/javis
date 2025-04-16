@@ -29,3 +29,9 @@
 - [X] fastapi 패키지 설치 확인
 - [X] uvicorn 패키지 설치 확인
 - [X] pydantic 패키지 설치 확인
+
+### 0.5. .gitignore 파일 생성 테스트
+- [X] .gitignore 파일 존재 확인
+- [X] 필수 패턴 포함 확인 (__pycache__, *.py[cod], .env)
+- [X] IDE 설정 파일 패턴 확인 (.idea/, .vscode/)
+- [X] OS 특정 파일 패턴 확인 (.DS_Store)

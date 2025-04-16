@@ -96,4 +96,30 @@ def test_dependencies_installation():
                 f"{package} 패키지가 pyproject.toml의 의존성 목록에 없습니다."
                 
     except Exception as e:
-        pytest.fail(f"pyproject.toml 파일 읽기 또는 의존성 확인 실패: {e}") 
+        pytest.fail(f"pyproject.toml 파일 읽기 또는 의존성 확인 실패: {e}")
+
+def test_gitignore_creation():
+    """
+    테스트 목적: .gitignore 파일이 올바르게 생성되었는지 확인합니다.
+    테스트 방법: 파일 존재 여부와 필수 패턴 포함 여부를 확인합니다.
+    """
+    # .gitignore 파일 존재 확인
+    assert os.path.exists('.gitignore'), ".gitignore 파일이 존재하지 않습니다."
+    
+    # .gitignore 파일 내용 읽기
+    with open('.gitignore', 'r') as f:
+        gitignore_content = f.read()
+    
+    # 필수 패턴 목록
+    required_patterns = [
+        '__pycache__/',
+        '*.py[cod]',
+        '.env',
+        '.idea/',
+        '.vscode/',
+        '.DS_Store'
+    ]
+    
+    # 각 패턴이 .gitignore 파일에 포함되어 있는지 확인
+    for pattern in required_patterns:
+        assert pattern in gitignore_content, f"{pattern} 패턴이 .gitignore 파일에 포함되어 있지 않습니다." 

@@ -122,4 +122,28 @@ def test_gitignore_creation():
     
     # 각 패턴이 .gitignore 파일에 포함되어 있는지 확인
     for pattern in required_patterns:
-        assert pattern in gitignore_content, f"{pattern} 패턴이 .gitignore 파일에 포함되어 있지 않습니다." 
+        assert pattern in gitignore_content, f"{pattern} 패턴이 .gitignore 파일에 포함되어 있지 않습니다."
+
+def test_readme_creation():
+    """
+    테스트 목적: README.md 파일이 올바르게 생성되었는지 확인합니다.
+    테스트 방법: 파일 존재 여부와 필수 내용 포함 여부를 확인합니다.
+    """
+    # README.md 파일 존재 확인
+    assert os.path.exists('README.md'), "README.md 파일이 존재하지 않습니다."
+    
+    # README.md 파일 내용 읽기
+    with open('README.md', 'r', encoding='utf-8') as f:
+        readme_content = f.read()
+    
+    # 필수 내용 목록
+    required_contents = [
+        'Jarvis AI Framework',
+        '설치',
+        '시작하기',
+        '라이선스'
+    ]
+    
+    # 각 내용이 README.md 파일에 포함되어 있는지 확인
+    for content in required_contents:
+        assert content in readme_content, f"{content} 내용이 README.md 파일에 포함되어 있지 않습니다." 

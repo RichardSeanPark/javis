@@ -41,3 +41,14 @@
 - [X] 프로젝트 제목 포함 확인
 - [X] 프로젝트 설명 포함 확인
 - [X] 설치 및 사용 방법 포함 확인
+
+### 0.7. .env.example 파일 생성 테스트
+- [X] .env.example 파일 존재 확인
+- [X] 필수 환경 변수 포함 확인 (GEMINI_API_KEY, GCP_PROJECT_ID)
+- [X] 환경 변수 값이 비어있는지 확인
+
+### 0.8. 기본 src 구조 생성 테스트
+- [X] src/jarvis 디렉토리 존재 확인
+- [X] src/jarvis/__init__.py 파일 존재 확인
+- [X] core, components, agents, tools, interfaces, models 하위 디렉토리 존재 확인
+- [X] 각 하위 디렉토리에 __init__.py 파일 존재 확인

@@ -146,4 +146,62 @@ def test_readme_creation():
     
     # 각 내용이 README.md 파일에 포함되어 있는지 확인
     for content in required_contents:
-        assert content in readme_content, f"{content} 내용이 README.md 파일에 포함되어 있지 않습니다." 
+        assert content in readme_content, f"{content} 내용이 README.md 파일에 포함되어 있지 않습니다."
+
+def test_env_example_creation():
+    """
+    테스트 목적: .env.example 파일이 올바르게 생성되었는지 확인합니다.
+    테스트 방법: 파일 존재 여부와 필수 환경 변수 포함 여부, 값 비어있는지 확인합니다.
+    """
+    # .env.example 파일 존재 확인
+    assert os.path.exists('.env.example'), ".env.example 파일이 존재하지 않습니다."
+    
+    # .env.example 파일 내용 읽기
+    with open('.env.example', 'r') as f:
+        env_content = f.read()
+    
+    # 필수 환경 변수 목록
+    required_variables = [
+        'GEMINI_API_KEY',
+        'GCP_PROJECT_ID'
+    ]
+    
+    # 각 환경 변수가 .env.example 파일에 포함되어 있는지 확인
+    for variable in required_variables:
+        assert variable in env_content, f"{variable} 환경 변수가 .env.example 파일에 포함되어 있지 않습니다."
+        
+        # 환경 변수 값이 비어있는지 확인
+        pattern = f"{variable}="
+        assert pattern in env_content, f"{variable} 환경 변수에 값이 설정되어 있습니다." 
+
+def test_src_structure_creation():
+    """
+    테스트 목적: 기본 src 구조가 올바르게 생성되었는지 확인합니다.
+    테스트 방법: src/jarvis 디렉토리와 하위 디렉토리, __init__.py 파일 존재 여부를 확인합니다.
+    """
+    # src/jarvis 디렉토리 존재 확인
+    assert os.path.exists('src/jarvis'), "src/jarvis 디렉토리가 존재하지 않습니다."
+    assert os.path.isdir('src/jarvis'), "src/jarvis가 디렉토리가 아닙니다."
+    
+    # src/jarvis/__init__.py 파일 존재 확인
+    assert os.path.exists('src/jarvis/__init__.py'), "src/jarvis/__init__.py 파일이 존재하지 않습니다."
+    
+    # 필수 하위 디렉토리 목록
+    required_subdirectories = [
+        'core',
+        'components',
+        'agents',
+        'tools',
+        'interfaces',
+        'models'
+    ]
+    
+    # 각 하위 디렉토리가 존재하는지 확인
+    for subdir in required_subdirectories:
+        full_path = f'src/jarvis/{subdir}'
+        assert os.path.exists(full_path), f"{full_path} 디렉토리가 존재하지 않습니다."
+        assert os.path.isdir(full_path), f"{full_path}가 디렉토리가 아닙니다."
+        
+        # 각 하위 디렉토리에 __init__.py 파일이 존재하는지 확인
+        init_file = f'{full_path}/__init__.py'
+        assert os.path.exists(init_file), f"{init_file} 파일이 존재하지 않습니다." 

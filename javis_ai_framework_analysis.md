@@ -185,7 +185,7 @@ class WeatherAgent(Agent):
         super().__init__(
             name="WeatherAgent",
             description="날씨 정보 제공 및 관련 질문 응답",
-            llm_config=LlmConfig(model="gemini-pro"),
+            llm_config=LlmConfig(model="gemini-2.0-flash-exp"),
             tools=[get_weather]
         )
     

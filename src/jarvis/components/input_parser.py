@@ -10,8 +10,11 @@ from ..models.input import ParsedInput
 # from google.generativeai.types import GenerationConfig # 필요 시
 # from google.generativeai.types import Content, Part # 제거
 import re # 정규 표현식 사용
-import google.generativeai as genai
+import google.genai as genai
 import asyncio # asyncio 임포트 추가
+from typing import Optional, Dict, Any
+# from google.generativeai.types import GenerateContentResponse # 이전 경로
+from google.genai.types import GenerateContentResponse # 새로운 SDK 경로
 
 # API 키 설정 (환경 변수 사용)
 try:

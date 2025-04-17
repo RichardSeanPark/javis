@@ -2,17 +2,18 @@
 중앙 디스패처 및 라우팅 로직
 """
 
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, Agent
 # from google.adk.models import LlmConfig # 더 이상 사용되지 않음
 from ..components.input_parser import InputParserAgent
 from pydantic import Field # Field 임포트 추가
 from ..models.input import ParsedInput # ParsedInput 임포트 추가
-from typing import Optional # Optional 임포트 추가
+from typing import Optional, List, Dict, Any # Import List, Any
+from google.genai.types import GenerateContentResponse # 새로운 SDK 경로
 
 class JarvisDispatcher(LlmAgent):
     """
     Jarvis AI 프레임워크의 중앙 디스패처.
-    요청을 분석하고 적절한 전문 에이전트로 라우팅합니다.
+    요청을 분석하고 적절한 전문 에이전트로 라우팅합니다. (ADK 자동 위임 활용)
     """
     # 클래스 변수로 필드 선언 (Pydantic 스타일)
     input_parser: InputParserAgent = Field(default_factory=InputParserAgent)
@@ -20,76 +21,99 @@ class JarvisDispatcher(LlmAgent):
     # 추가: 현재 요청 처리 상태를 저장할 인스턴스 변수 (타입 힌트)
     current_parsed_input: Optional[ParsedInput] = None
     current_original_language: Optional[str] = None
+    # Make self.tools a list managed by the instance
+    tools: List[Agent] = Field(default_factory=list)
+    # Pydantic 필드로 llm 선언 (LlmAgent가 내부적으로 사용할 것으로 기대)
+    llm: Any = None # 테스트에서 모킹할 수 있도록 Any 타입 사용 및 기본값 None 설정
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """JarvisDispatcher 초기화"""
+        instruction = (
+            "You are the central dispatcher for the Jarvis AI Framework. "
+            "Your primary role is to understand the user's request (provided as input) and delegate it to the most suitable specialized agent available in your tools. "
+            "Examine the descriptions of the available agents (tools) to make the best routing decision. "
+            "Do not attempt to fulfill the request yourself; focus solely on delegation. "
+            "If multiple agents seem suitable, choose the best one. If no agent is suitable, indicate that routing is not possible."
+        )
         super().__init__(
             name="JarvisDispatcher",
-            description="Central dispatcher for the Jarvis AI Framework. Analyzes requests and routes them to the appropriate specialized agent.",
-            model="gemini-2.0-flash-exp" # 모델 이름 직접 전달
+            description="Central dispatcher for the Jarvis AI Framework using ADK's automatic delegation based on sub-agent descriptions.",
+            model="gemini-2.0-flash-exp",
+            instruction=instruction,
         )
+        # Ensure self.tools is initialized
+        self.tools = []
         # 초기화는 Field의 default_factory에서 처리됨
         # self.input_parser = InputParserAgent() # 제거
         # self.sub_agents = {} # 제거
         # TODO: 추후 Agent Hub 클라이언트 초기화 로직 추가
 
-    def register_agent(self, agent: LlmAgent):
-        """하위 에이전트를 디스패처에 등록합니다."""
-        if not isinstance(agent, LlmAgent):
-            raise TypeError("Registered agent must be an instance of LlmAgent or its subclass.")
+    def register_agent(self, agent: Agent):
+        """하위 에이전트를 디스패처에 등록하고 tools 리스트를 업데이트합니다."""
+        if not isinstance(agent, Agent):
+            raise TypeError("Registered agent must be an instance of Agent or its subclass.")
         if not agent.name:
             raise ValueError("Registered agent must have a valid name.")
-        if agent.name in self.sub_agents:
-            # TODO: 로깅 라이브러리를 사용하여 경고 로깅 (logging.warning 사용)
+
+        is_overwriting = agent.name in self.sub_agents
+        if is_overwriting:
             print(f"Warning: Agent with name '{agent.name}' already registered. Overwriting.")
-            # logger.warning(f"Agent with name '{agent.name}' already registered. Overwriting.") 
+            # Remove the old agent from tools list
+            self.tools = [tool for tool in self.tools if tool.name != agent.name]
+
         self.sub_agents[agent.name] = agent
-        print(f"Agent '{agent.name}' registered successfully.")
+        # Add the new agent to the tools list
+        self.tools.append(agent)
+        print(f"Agent '{agent.name}' registered and added to tools list for ADK delegation.")
 
-    # TODO: 3.3. 메인 처리 로직 구현 (__call__ 또는 process_request 메서드)
-    async def process_request(self, user_input: str):
+    async def process_request(self, user_input: str) -> str: # Add return type hint
         """
-        사용자 입력을 받아 처리하고 적절한 에이전트로 라우팅하는 메인 로직.
-        
-        Args:
-            user_input: 사용자의 원본 입력 문자열.
+        사용자 입력을 받아 파싱하고, ADK 자동 위임을 통해 적절한 에이전트로 라우팅 후 결과를 반환합니다.
         """
-        # TODO: 3.3.2. self.input_parser.process_input() 호출하여 ParsedInput 객체 얻기
+        # 1. Parse Input
         parsed_input = await self.input_parser.process_input(user_input)
-        # TODO: 3.3.3. ParsedInput 객체와 original_language 정보 저장
         self.current_parsed_input = parsed_input
-        self.current_original_language = parsed_input.original_language if parsed_input else None # None 체크 추가
-        # TODO: 3.3.4. 라우팅 결정 로직 시작
-        selected_agent = None
-        if self.current_parsed_input:
-            # 초기 규칙 기반 라우팅 (intent 또는 domain 기준)
-            # 예시: intent가 'code_generation'이거나 domain이 'coding'이면 CodingAgent 선택
-            #       intent가 'question_answering'이거나 domain이 'general'이면 KnowledgeQA_Agent 선택
-            # 실제 에이전트 이름은 등록 방식에 따라 달라짐 (4단계에서 정의)
-            intent = self.current_parsed_input.intent
-            domain = self.current_parsed_input.domain
+        self.current_original_language = parsed_input.original_language if parsed_input else None
 
-            # TODO: 향후 CodingAgent, KnowledgeQA_Agent 등의 실제 이름으로 변경 필요
-            if (intent == 'code_generation' or domain == 'coding') and 'CodingAgent' in self.sub_agents:
-                selected_agent = self.sub_agents['CodingAgent']
-            elif (intent == 'question_answering' or domain == 'general') and 'KnowledgeQA_Agent' in self.sub_agents:
-                selected_agent = self.sub_agents['KnowledgeQA_Agent']
-            # TODO: 추가적인 라우팅 규칙 또는 기본 에이전트 설정
+        if not self.current_parsed_input:
+            # TODO: Proper error handling/logging
+            print("Input parsing failed. Cannot proceed.")
+            return "Error: Input parsing failed."
 
-        # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
-        if selected_agent:
-            # TODO: 선택된 에이전트 호출 로직 (다음 단계에서 구현)
-            print(f"Routing to: {selected_agent.name}") # 임시 출력
-            pass 
-        else:
-            # TODO: 처리할 에이전트가 없을 경우의 로직 (예: 기본 에이전트 또는 에러 처리)
-            print("No suitable agent found for routing.") # 임시 출력
-            pass
-        
-        # TODO: 3.5. 결과 처리 및 반환
-        # TODO: 3.6. 에러 핸들링
-        # 임시 반환값
-        return "Processing complete (placeholder)."
+        # Use english_text for LLM interaction
+        llm_input_text = self.current_parsed_input.english_text
+        print(f"Dispatcher received english text: {llm_input_text}")
+        print(f"Attempting delegation using ADK LlmAgent's capabilities with {len(self.tools)} registered tool(s)...")
+
+        # 2. ADK Delegation Logic
+        try:
+            # Use the agent's llm instance configured by LlmAgent __init__
+            response = await self.llm.generate_content_async(
+                llm_input_text,
+                tools=self.tools # Pass registered agents for delegation
+            )
+
+            # Extract text response, acknowledging potential complexities with function call handling
+            final_response_text = "No textual response generated." # Default
+            if isinstance(response, GenerateContentResponse) and response.parts:
+                text_parts = [part.text for part in response.parts if hasattr(part, 'text')]
+                if text_parts:
+                    final_response_text = "\n".join(text_parts)
+                
+                # Log if function calls were made (for debugging/future implementation)
+                function_calls = [part.function_call for part in response.parts if hasattr(part, 'function_call')]
+                if function_calls:
+                     print(f"ADK LLM responded with function call(s): {function_calls}. Further handling might be needed.")
+
+            print(f"Dispatcher processing finished. Raw English Response: {final_response_text}")
+            # TODO: Step 6 - Pass English result to ResponseGenerator
+            return final_response_text # Return English text
+
+        except Exception as e:
+            # TODO: Proper error handling and logging
+            print(f"Error during dispatcher processing: {e}")
+            # Consider traceback.format_exc() for more details in logging
+            return f"Error during processing request: {e}"
 
     # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
     # TODO: 3.5. 결과 처리 및 반환

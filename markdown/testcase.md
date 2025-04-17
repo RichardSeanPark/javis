@@ -144,3 +144,9 @@
 - [X] `intent`와 `domain`이 등록된 에이전트와 일치하지 않을 때, `selected_agent`가 `None`인지 확인 (Mock 사용)
 - [X] 해당 `intent`/`domain`에 맞는 에이전트가 `sub_agents`에 등록되어 있지 않을 때, `selected_agent`가 `None`인지 확인 (Mock 사용)
 - [X] `current_parsed_input`이 `None`일 때, 에이전트 선택 로직을 건너뛰는지 확인
+
+### 3.3.2. ADK 자동 위임 설정 테스트
+- [X] `JarvisDispatcher` 초기화 시 `instruction` 속성이 올바르게 설정되는지 확인 (위임 관련 키워드 포함)
+- [X] `register_agent` 호출 시 전달된 에이전트가 `self.sub_agents` 딕셔너리와 `self.tools` 리스트 양쪽에 추가되는지 확인
+- [X] 동일한 이름의 에이전트를 다시 `register_agent`로 등록할 때, 기존 에이전트가 `self.tools` 리스트에서 제거되고 새 에이전트가 추가되는지 확인
+- [X] `process_request` 내부에서 `self.llm.generate_content_async`가 호출될 때, `tools` 인자에 `self.tools` 리스트가 올바르게 전달되는지 확인 (Mock `self.llm` 사용)

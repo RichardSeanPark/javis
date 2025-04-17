@@ -44,7 +44,7 @@
         - 향후 '/chat' 엔드포인트를 추가할 예정임을 주석으로 표시합니다.
     - [X] **실행 스크립트 추가** (`pyproject.toml`의 `[tool.poetry.scripts]` 또는 별도 `run_api.py`)
     - [X] **API 서버 실행 테스트**: `uvicorn src.jarvis.interfaces.api.main:app --reload` 명령어로 서버 실행 확인
-    - [ ] **(후속 작업)** `/chat` 엔드포인트 구현 및 프론트엔드 개발은 별도 계획
+    - [-] **(후속 작업)** `/chat` 엔드포인트 구현 및 프론트엔드 개발은 별도 계획
 
 ## 2. 입력 처리 및 파싱 계층 (`src/jarvis/components/input_parser.py`)
 

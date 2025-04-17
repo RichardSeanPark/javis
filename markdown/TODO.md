@@ -79,13 +79,13 @@
     - [X] LLM 호출 로직 작성
     - [X] 영어 번역용 프롬프트 설계 (예: `"Translate the following text from {original_language} to English:\\n\\nText: {user_input}"`)
     - [X] LLM 응답에서 번역된 텍스트 추출 및 `english_text` 변수에 저장 (원본이 영어면 `user_input` 그대로 저장)
-- [ ] **2.5. 의도/엔티티/도메인 분석 기능 구현 (`process_input` 메서드 내)**
-    - [ ] LLM 호출 로직 작성 (입력은 `english_text` 사용, 내부 처리는 항상 영어로 진행)
-    - [ ] 분석용 프롬프트 설계 (예: `"Analyze the following English text. Identify the primary intent (e.g., code_generation, question_answering, document_summary), extract key entities (as JSON if possible), and determine the main domain (e.g., coding, finance, general). Text: {english_text}"`)
-    - [ ] LLM 응답 파싱하여 `intent`, `entities`, `domain` 추출 및 변수에 저장
-- [ ] **2.6. `ParsedInput` 객체 생성 및 반환 (`process_input` 메서드 내)**
-    - [ ] 수집된 정보 (`original_text`, `original_language`, `english_text`, `intent`, `entities`, `domain`)를 사용하여 `ParsedInput` 객체 인스턴스화
-    - [ ] 생성된 `ParsedInput` 객체 반환
+- [X] **2.5. 의도/엔티티/도메인 분석 기능 구현 (`process_input` 메서드 내)**
+    - [X] LLM 호출 로직 작성 (입력은 `english_text` 사용, 내부 처리는 항상 영어로 진행)
+    - [X] 분석용 프롬프트 설계 (예: `"Analyze the following English text. Identify the primary intent (e.g., code_generation, question_answering, document_summary), extract key entities (as JSON if possible), and determine the main domain (e.g., coding, finance, general). Text: {english_text}"`)
+    - [X] LLM 응답 파싱하여 `intent`, `entities`, `domain` 추출 및 변수에 저장
+- [X] **2.6. `ParsedInput` 객체 생성 및 반환 (`process_input` 메서드 내)**
+    - [X] 수집된 정보 (`original_text`, `original_language`, `english_text`, `intent`, `entities`, `domain`)를 사용하여 `ParsedInput` 객체 인스턴스화
+    - [X] 생성된 `ParsedInput` 객체 반환
 - [ ] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가
 
 ## 3. 에이전트 라우팅 계층 (MCP/Dispatcher) (`src/jarvis/core/dispatcher.py`)

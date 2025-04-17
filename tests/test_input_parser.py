@@ -6,6 +6,7 @@ import pytest
 import sys
 import os
 import asyncio
+import re # re 임포트 추가
 from pathlib import Path
 from google.adk.agents import LlmAgent # 수정: LlmAgent 임포트 확인 (test_input_parser_inherits_llm_agent 위해)
 
@@ -75,27 +76,55 @@ def test_process_input_method_signature(agent):
     assert sig.return_annotation == ParsedInput
 
 @pytest.mark.asyncio
-async def test_process_input_language_detection_live(agent):
+async def test_process_input_language_detection_and_translation_live(agent):
     """
-    테스트 목적: 실제 API 호출을 통해 언어 감지가 성공하는지 확인합니다.
+    테스트 목적: 실제 API 호출을 통해 언어 감지 및 영어 번역이 성공하는지 확인합니다.
     주의: 실제 API 키와 네트워크 연결이 필요합니다.
     """
-    # 충분히 다른 언어로 테스트
     test_cases = [
-        ("안녕하세요, 반갑습니다.", "ko"),
-        ("Hello, nice to meet you.", "en"),
-        ("こんにちは、はじめまして。", "ja"),
-        ("Bonjour, enchanté.", "fr"),
-        ("你好，很高兴认识你。", "zh"), # 중국어 간체
+        # (입력 텍스트, 예상 원본 언어, 예상 영어 번역 (일부 또는 키워드))
+        ("안녕하세요, 반갑습니다.", "ko", "hello nice to meet you"), # 대소문자 무시, 구두점 무시 비교
+        ("Hello, nice to meet you.", "en", "hello nice to meet you"), # 영어는 그대로
+        ("こんにちは、はじめまして。", "ja", "hello nice to meet you"),
+        ("Bonjour, enchanté.", "fr", "hello pleased to meet you"),
+        ("你好，很高兴认识你。", "zh", "hello nice to meet you"),
+        # 다른 예시 추가 가능
+        ("나는 학생입니다.", "ko", "i am a student"),
+        ("저는 오늘 공원에 갔습니다.", "ko", "i went to the park today"),
+        ("This is a test in English.", "en", "this is a test in english"),
     ]
 
-    for text, expected_lang in test_cases:
-        print(f"Testing language detection for: {text[:20]}... ({expected_lang})")
+    for text, expected_lang, expected_translation_part in test_cases:
+        print(f"\nTesting: {text[:30]}... (Expected lang: {expected_lang})", flush=True)
         result = await agent.process_input(text)
-        assert result.original_language == expected_lang, f"Expected {expected_lang} but got {result.original_language} for input: {text}"
+
+        # 1. 원본 텍스트 확인
         assert result.original_text == text
-        # 번역 및 분석은 아직 구현 안됨
-        assert result.english_text == text
+
+        # 2. 감지된 언어 확인
+        assert result.original_language == expected_lang, \
+               f"Language mismatch for '{text}'. Expected: {expected_lang}, Got: {result.original_language}"
+
+        # 3. 번역 결과 확인 (대소문자, 구두점 무시, 일부 포함 여부)
+        # 실제 번역 결과는 모델에 따라 약간씩 다를 수 있으므로 핵심 내용 포함 여부 확인
+        # 구두점 제거 로직 수정: strip -> re.sub
+        normalized_actual = re.sub(r'[.,!?]', '', result.english_text.lower()).strip()
+        normalized_expected = re.sub(r'[.,!?]', '', expected_translation_part.lower()).strip()
+
+        # 영어 입력의 경우, 원본과 번역 결과가 동일해야 함 (정규화 후 비교)
+        if expected_lang == "en":
+             # 영어 원본도 동일하게 정규화
+             normalized_original = re.sub(r'[.,!?]', '', text.lower()).strip()
+             assert normalized_actual == normalized_original, \
+                   f"English input mismatch for '{text}'. Original: {normalized_original}, Got: {normalized_actual}"
+        else:
+            # 다른 언어의 경우, 예상 번역 키워드가 포함되어 있는지 확인
+            # 더 정확한 비교를 위해 유사도 라이브러리 사용 고려 가능
+            # 비교 로직은 그대로 유지 (포함 여부 확인)
+            assert normalized_expected in normalized_actual or normalized_actual in normalized_expected , \
+                   f"Translation mismatch for '{text}'. Expected part: '{normalized_expected}', Got: '{normalized_actual}'"
+
+        # TODO: intent, entities, domain은 아직 None인지 확인
         assert result.intent is None
         assert result.entities is None
         assert result.domain is None

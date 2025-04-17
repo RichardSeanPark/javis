@@ -74,11 +74,11 @@
     - [X] `google.generativeai` 클라이언트를 사용하여 LLM 호출 로직 작성 (`model.generate_content_async`)
     - [X] 언어 감지용 프롬프트 설계 (ISO 639-1 코드만 반환하도록 요청)
     - [X] LLM 응답에서 정규식 등을 사용하여 언어 코드 추출 및 `original_language` 변수에 저장 (오류 처리 포함)
-- [ ] **2.4. 영어 번역 기능 구현 (`process_input` 메서드 내)**
-    - [ ] `original_language`가 'en'이 아닌 경우에만 실행
-    - [ ] LLM 호출 로직 작성
-    - [ ] 영어 번역용 프롬프트 설계 (예: `"Translate the following text from {original_language} to English:\n\nText: {user_input}"`)
-    - [ ] LLM 응답에서 번역된 텍스트 추출 및 `english_text` 변수에 저장 (원본이 영어면 `user_input` 그대로 저장)
+- [X] **2.4. 영어 번역 기능 구현 (`process_input` 메서드 내)**
+    - [X] `original_language`가 'en'이 아닌 경우에만 실행
+    - [X] LLM 호출 로직 작성
+    - [X] 영어 번역용 프롬프트 설계 (예: `"Translate the following text from {original_language} to English:\\n\\nText: {user_input}"`)
+    - [X] LLM 응답에서 번역된 텍스트 추출 및 `english_text` 변수에 저장 (원본이 영어면 `user_input` 그대로 저장)
 - [ ] **2.5. 의도/엔티티/도메인 분석 기능 구현 (`process_input` 메서드 내)**
     - [ ] LLM 호출 로직 작성 (입력은 `english_text` 사용, 내부 처리는 항상 영어로 진행)
     - [ ] 분석용 프롬프트 설계 (예: `"Analyze the following English text. Identify the primary intent (e.g., code_generation, question_answering, document_summary), extract key entities (as JSON if possible), and determine the main domain (e.g., coding, finance, general). Text: {english_text}"`)

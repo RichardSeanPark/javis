@@ -87,3 +87,13 @@
 - [X] 필수 필드 누락 시 유효성 검사 오류 발생하는지 확인
 - [X] 모든 필드에 올바른 타입의 값을 할당할 수 있는지 확인
 - [X] 선택적 필드에 `None` 값을 할당할 수 있는지 확인
+
+### 2.2. InputParserAgent 클래스 정의 테스트
+- [X] `src/jarvis/components/input_parser.py` 파일 존재 확인
+- [X] `InputParserAgent` 클래스가 `LlmAgent`를 상속하는지 확인
+- [X] `__init__` 메서드가 "InputParser" 이름, 설명, `model` ID로 부모 클래스를 초기화하는지 확인
+- [X] `process_input` 메서드가 정의되어 있고, `user_input` 문자열을 인자로 받고 `ParsedInput` 객체를 반환하는지 확인 (타입 힌트 및 비동기 확인)
+- [-] (다음 단계) `process_input` 메서드 내 언어 감지 로직 테스트
+- [-] (다음 단계) `process_input` 메서드 내 영어 번역 로직 테스트
+- [-] (다음 단계) `process_input` 메서드 내 의도/엔티티/도메인 분석 로직 테스트
+- [-] (다음 단계) `process_input` 메서드가 최종 `ParsedInput` 객체를 올바르게 생성하여 반환하는지 테스트

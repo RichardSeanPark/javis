@@ -58,16 +58,18 @@
         *   `entities`: 텍스트에서 추출된 주요 엔티티 정보 (선택적 딕셔너리 타입, `Optional[Dict[str, Any]]`).
         *   `domain`: 식별된 요청의 주 도메인 (선택적 문자열 타입, `Optional[str]`, 예: 'coding', 'general').
         *   필요에 따라 다른 관련 필드(예: 신뢰도 점수)를 추가할 수 있습니다.
-- [ ] **2.2. `InputParserAgent` 클래스 정의 (`src/jarvis/components/input_parser.py`)**
-    - [ ] ADK `LlmAgent` 상속
-        - 이 파일에서는 `google.adk` 모듈에서 `LlmAgent`와 `LlmConfig` 클래스를 가져옵니다.
-        - 내부에서 정의한 `src.jarvis.models.input` 모듈에서 `ParsedInput` 클래스를 가져옵니다.
+- [X] **2.2. `InputParserAgent` 클래스 정의 (`src/jarvis/components/input_parser.py`)**
+    - [X] ADK `LlmAgent` 상속 (`google.adk.agents` 사용)
+        - 이 파일에서는 `google.adk.agents` 모듈에서 `LlmAgent` 클래스를 가져옵니다.
+        - `src.jarvis.models.input` 모듈에서 `ParsedInput` 클래스를 가져옵니다.
         - 필요시 Google Cloud와 Vertex AI 서비스를 위한 라이브러리를 가져옵니다.
         - `InputParserAgent` 클래스를 정의하고 `LlmAgent`를 상속받습니다.
-        - `__init__` 메서드를 구현하여 부모 클래스 초기화 시 "InputParser"라는 이름과 입력 분석 관련 설명, 그리고 "gemini-pro" 모델을 사용하는 설정을 전달합니다.
+    - [X] `__init__` 메서드 구현
+        - 부모 클래스(`LlmAgent`) 초기화 시 `name`, `description`, `model` 파라미터 전달 (예: `model="gemini-1.5-flash"`).
         - 필요시 추가적인 모델 초기화 코드를 구현할 수 있습니다.
-        - `process_input` 메서드를 정의하여 사용자 입력(`user_input`)을 받아 `ParsedInput` 객체를 반환하는 비동기 함수를 구현합니다.
-        - 이 메서드의 상세 구현은 다음 단계에서 진행됩니다.
+    - [X] `process_input` 메서드 정의
+        - 사용자 입력(`user_input`)을 받아 `ParsedInput` 객체를 반환하는 비동기 함수(`async def`)로 구현합니다.
+        - 이 메서드의 상세 구현(언어 감지, 번역 등)은 다음 단계에서 진행됩니다.
 - [ ] **2.3. 언어 감지 기능 구현 (`process_input` 메서드 내)**
     - [ ] LLM 호출 로직 작성 (ADK `self.llm.generate_content` 또는 직접 클라이언트 사용)
     - [ ] 언어 감지용 프롬프트 설계 (예: `"Detect the language of the following text and return only the ISO 639-1 code:\n\nText: {user_input}"`)

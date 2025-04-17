@@ -55,7 +55,7 @@ htmlcov/
 coverage.xml
 
 # Poetry
-poetry.lock
+# poetry.lock
 
 # Cursor specific
 .cursor/

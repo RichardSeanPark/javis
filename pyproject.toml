@@ -21,7 +21,13 @@ dependencies = [
     "python-dotenv (>=1.1.0,<2.0.0)"
 ]
 
+[project.scripts]
+run-api = "javis.scripts.run_api:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest-mock = "^3.14.0"
+

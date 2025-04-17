@@ -93,7 +93,11 @@
 - [X] `InputParserAgent` 클래스가 `LlmAgent`를 상속하는지 확인
 - [X] `__init__` 메서드가 "InputParser" 이름, 설명, `model` ID로 부모 클래스를 초기화하는지 확인
 - [X] `process_input` 메서드가 정의되어 있고, `user_input` 문자열을 인자로 받고 `ParsedInput` 객체를 반환하는지 확인 (타입 힌트 및 비동기 확인)
-- [-] (다음 단계) `process_input` 메서드 내 언어 감지 로직 테스트
+- [ ] **언어 감지 테스트**: 다양한 언어 입력에 대해 `self.llm.generate_content`가 올바른 프롬프트로 호출되는지 확인 (Mock 사용)
+- [ ] **언어 감지 테스트**: LLM 응답(Mock)이 주어졌을 때, 언어 코드가 정확히 파싱되어 `ParsedInput.original_language`에 저장되는지 확인 (예: "ko", "en", "ja")
+- [ ] **언어 감지 테스트**: LLM 응답(Mock)이 예상치 못한 형식일 때 기본값('en')이 사용되는지 확인
+- [ ] **언어 감지 테스트**: LLM 호출 중 예외 발생 시 기본값('en')이 사용되고 오류가 로깅되는지 확인 (Mock 사용)
+- [X] **언어 감지 테스트 (Live API)**: 다양한 언어 입력에 대해 `process_input` 메서드가 별도 `genai` 클라이언트를 사용하여 API를 호출하고, 반환된 `ParsedInput` 객체의 `original_language` 필드에 올바른 언어 코드(ko, en, ja, fr, zh 등)를 저장하는지 확인합니다.
 - [-] (다음 단계) `process_input` 메서드 내 영어 번역 로직 테스트
 - [-] (다음 단계) `process_input` 메서드 내 의도/엔티티/도메인 분석 로직 테스트
 - [-] (다음 단계) `process_input` 메서드가 최종 `ParsedInput` 객체를 올바르게 생성하여 반환하는지 테스트

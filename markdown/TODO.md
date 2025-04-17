@@ -70,10 +70,10 @@
     - [X] `process_input` 메서드 정의
         - 사용자 입력(`user_input`)을 받아 `ParsedInput` 객체를 반환하는 비동기 함수(`async def`)로 구현합니다.
         - 이 메서드의 상세 구현(언어 감지, 번역 등)은 다음 단계에서 진행됩니다.
-- [ ] **2.3. 언어 감지 기능 구현 (`process_input` 메서드 내)**
-    - [ ] LLM 호출 로직 작성 (ADK `self.llm.generate_content` 또는 직접 클라이언트 사용)
-    - [ ] 언어 감지용 프롬프트 설계 (예: `"Detect the language of the following text and return only the ISO 639-1 code:\n\nText: {user_input}"`)
-    - [ ] LLM 응답에서 언어 코드(예: 'ko', 'en', 'ja', 'zh', 'fr' 등 ISO 639-1 표준 코드) 추출 및 `original_language` 변수에 저장
+- [X] **2.3. 언어 감지 기능 구현 (`process_input` 메서드 내)**
+    - [X] `google.generativeai` 클라이언트를 사용하여 LLM 호출 로직 작성 (`model.generate_content_async`)
+    - [X] 언어 감지용 프롬프트 설계 (ISO 639-1 코드만 반환하도록 요청)
+    - [X] LLM 응답에서 정규식 등을 사용하여 언어 코드 추출 및 `original_language` 변수에 저장 (오류 처리 포함)
 - [ ] **2.4. 영어 번역 기능 구현 (`process_input` 메서드 내)**
     - [ ] `original_language`가 'en'이 아닌 경우에만 실행
     - [ ] LLM 호출 로직 작성

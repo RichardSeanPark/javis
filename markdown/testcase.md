@@ -116,37 +116,41 @@
 - [X] `JarvisDispatcher` 인스턴스 생성 시 오류가 없는지 확인
 - [X] 생성된 인스턴스의 `name` 속성이 "JarvisDispatcher"인지 확인
 - [X] 생성된 인스턴스의 `description` 속성이 설정된 설명과 일치하는지 확인
-- [X] 생성된 인스턴스의 `model` 속성이 "gemini-2.0-flash-exp"인지 확인 (LlmConfig 제거 후 확인)
+- [X] 생성된 인스턴스의 `model` 속성이 설정된 모델 이름과 일치하는지 확인 (기본값 또는 생성 시 지정된 값)
 - [X] 생성된 인스턴스의 `input_parser` 속성이 `InputParserAgent`의 인스턴스인지 확인
 - [X] 생성된 인스턴스의 `sub_agents` 속성이 빈 딕셔너리(`{}`)인지 확인
+- [X] 생성된 인스턴스의 `llm_clients` 딕셔너리가 존재하고, 디스패처 모델에 대한 클라이언트가 초기화되었는지 확인
 
 ### 3.2. `JarvisDispatcher.register_agent` 메서드 테스트
-- [X] 유효한 `LlmAgent` 인스턴스를 성공적으로 등록하는지 확인 (`sub_agents` 딕셔너리에 추가되는지 검증)
-- [X] 등록 시 콘솔에 "Agent '{agent.name}' registered successfully." 메시지가 출력되는지 확인 (캡처 또는 Mock 사용)
+- [X] 유효한 `LlmAgent` 인스턴스를 성공적으로 등록하는지 확인 (`sub_agents` 딕셔너리와 `tools` 리스트에 추가되는지 검증)
+- [X] 등록 시 콘솔에 로그 메시지가 출력되는지 확인
 - [X] `LlmAgent`가 아닌 다른 타입의 객체를 등록 시 `TypeError`가 발생하는지 확인
 - [X] `name` 속성이 없는 에이전트 인스턴스 등록 시 `ValueError`가 발생하는지 확인
-- [X] 동일한 이름의 에이전트를 다시 등록할 때 기존 에이전트를 덮어쓰는지 확인 (`sub_agents` 내용 변경 검증)
-- [X] 동일한 이름의 에이전트를 다시 등록할 때 콘솔에 "Warning: Agent with name '{agent.name}' already registered. Overwriting." 경고 메시지가 출력되는지 확인 (캡처 또는 Mock 사용)
+- [X] 동일한 이름의 에이전트를 다시 등록할 때 기존 에이전트를 덮어쓰고 `tools` 리스트도 업데이트하는지 확인
+- [X] 동일한 이름의 에이전트를 다시 등록할 때 콘솔에 경고 로그 메시지가 출력되는지 확인
 
 ### 3.3. `JarvisDispatcher.process_request` 메서드 테스트
 - [X] `process_request` 메서드가 비동기 함수(`async def`)로 정의되어 있는지 확인
 - [X] `process_request` 메서드가 `user_input` 인자를 문자열(`str`) 타입으로 받는지 확인 (타입 힌트 검증)
-- [X] `process_request` 내부에서 `self.input_parser.process_input` 메서드가 `user_input` 인자와 함께 비동기적으로 호출되는지 확인 (Mock 사용)
-- [X] `self.input_parser.process_input` 호출 결과(Mock 객체)가 `parsed_input` 변수에 할당되는지 확인
-- [X] `process_request` 실행 후 `dispatcher.current_parsed_input`에 `input_parser.process_input`의 반환값(Mock 객체)이 할당되는지 확인
-- [X] `process_request` 실행 후 `dispatcher.current_original_language`에 Mock `ParsedInput` 객체의 `original_language` 속성값이 할당되는지 확인
+- [ ] `process_request` 내부에서 `self.input_parser.process_input` 메서드가 `user_input` 인자와 함께 비동기적으로 호출되는지 확인 (Mock 사용)
+- [ ] `self.input_parser.process_input` 호출 결과(Mock 객체)가 `parsed_input` 변수에 할당되는지 확인
+- [ ] `process_request` 실행 후 `dispatcher.current_parsed_input`에 `input_parser.process_input`의 반환값(Mock 객체)이 할당되는지 확인
+- [ ] `process_request` 실행 후 `dispatcher.current_original_language`에 Mock `ParsedInput` 객체의 `original_language` 속성값이 할당되는지 확인
 
-### 3.3.1. 규칙 기반 라우팅 테스트
-- [X] `intent`가 'code_generation'일 때, `CodingAgent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock `ParsedInput`, Mock `sub_agents` 사용)
-- [X] `domain`이 'coding'일 때, `CodingAgent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock 사용)
-- [X] `intent`가 'question_answering'일 때, `KnowledgeQA_Agent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock 사용)
-- [X] `domain`이 'general'일 때, `KnowledgeQA_Agent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock 사용)
-- [X] `intent`와 `domain`이 등록된 에이전트와 일치하지 않을 때, `selected_agent`가 `None`인지 확인 (Mock 사용)
-- [X] 해당 `intent`/`domain`에 맞는 에이전트가 `sub_agents`에 등록되어 있지 않을 때, `selected_agent`가 `None`인지 확인 (Mock 사용)
-- [X] `current_parsed_input`이 `None`일 때, 에이전트 선택 로직을 건너뛰는지 확인
+### 3.3.1. 규칙 기반 라우팅 테스트 (현재 미사용)
+- [ ] `intent`가 'code_generation'일 때, `CodingAgent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock `ParsedInput`, Mock `sub_agents` 사용)
+- [ ] `domain`이 'coding'일 때, `CodingAgent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock 사용)
+- [ ] `intent`가 'question_answering'일 때, `KnowledgeQA_Agent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock 사용)
+- [ ] `domain`이 'general'일 때, `KnowledgeQA_Agent`가 등록되어 있다면 해당 에이전트가 선택되는지 확인 (Mock 사용)
+- [ ] `intent`와 `domain`이 등록된 에이전트와 일치하지 않을 때, `selected_agent`가 `None`인지 확인 (Mock 사용)
+- [ ] 해당 `intent`/`domain`에 맞는 에이전트가 `sub_agents`에 등록되어 있지 않을 때, `selected_agent`가 `None`인지 확인 (Mock 사용)
+- [ ] `current_parsed_input`이 `None`일 때, 에이전트 선택 로직을 건너뛰는지 확인
 
-### 3.3.2. ADK 자동 위임 설정 테스트
+### 3.3.2. ADK 자동 위임 설정 테스트 (Live API)
 - [X] `JarvisDispatcher` 초기화 시 `instruction` 속성이 올바르게 설정되는지 확인 (위임 관련 키워드 포함)
 - [X] `register_agent` 호출 시 전달된 에이전트가 `self.sub_agents` 딕셔너리와 `self.tools` 리스트 양쪽에 추가되는지 확인
 - [X] 동일한 이름의 에이전트를 다시 `register_agent`로 등록할 때, 기존 에이전트가 `self.tools` 리스트에서 제거되고 새 에이전트가 추가되는지 확인
-- [X] `process_request` 내부에서 `self.llm.generate_content_async`가 호출될 때, `tools` 인자에 `self.tools` 리스트가 올바르게 전달되는지 확인 (Mock `self.llm` 사용)
+- [X] `process_request` 내부에서 디스패처 LLM(`generate_content_async`)이 호출될 때, 동적으로 생성된 프롬프트(instruction + tools + query)가 전달되는지 확인 (로깅 확인)
+- [X] **위임 성공 테스트 (CodingAgent)**: 코딩 관련 요청 시, 디스패처 LLM이 "CodingAgent"를 반환하고, 최종 응답 문자열에 "Delegating task to agent: CodingAgent"가 포함되는지 확인 (Live API)
+- [X] **위임 성공 테스트 (KnowledgeQA_Agent)**: 일반 질문 시, 디스패처 LLM이 "KnowledgeQA_Agent"를 반환하고, 최종 응답 문자열에 "Delegating task to agent: KnowledgeQA_Agent"가 포함되는지 확인 (Live API)
+- [X] **위임 실패 테스트 (적절한 에이전트 없음)**: 등록된 에이전트가 처리할 수 없는 요청 시, 디스패처 LLM이 "NO_AGENT" 또는 관련 없는 에이전트 이름을 반환하고, 최종 응답 문자열에 "No suitable agent found"가 포함되는지 확인 (Live API)

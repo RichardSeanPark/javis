@@ -2,119 +2,298 @@
 중앙 디스패처 및 라우팅 로직
 """
 
-from google.adk.agents import LlmAgent, Agent
+from google.adk.agents import LlmAgent, BaseAgent as Agent
 # from google.adk.models import LlmConfig # 더 이상 사용되지 않음
 from ..components.input_parser import InputParserAgent
 from pydantic import Field # Field 임포트 추가
 from ..models.input import ParsedInput # ParsedInput 임포트 추가
-from typing import Optional, List, Dict, Any # Import List, Any
-from google.genai.types import GenerateContentResponse # 새로운 SDK 경로
+from typing import Optional, List, Dict, Any, AsyncGenerator # Import List, Any, AsyncGenerator
+# import google.generativeai as genai # ADK 코드와 일치시키기 위해 주석 처리
+import google.genai as genai # ADK 코드에서 사용하는 google.genai 임포트
+# from google.generativeai.types import GenerateContentResponse # 경로 변경
+from google.genai.types import GenerateContentResponse # google.genai 경로 사용
+import logging # 로깅 추가
+import os # 환경 변수 사용 위해 추가
+import dotenv # .env 파일 로드 위해 추가
+from google.adk.agents import BaseAgent
+from google.adk.agents.invocation_context import InvocationContext # 수정된 경로
+from google.adk.events import Event # 수정된 경로
+# from google.generativeai import Content, Part # google.generativeai 에서 직접 임포트 시도 -> 실패
+from google.genai.types import Content, Part # ADK 코드와 일치하는 google.genai.types 경로 사용
+# from typing import AsyncGenerator # typing 모듈에서 가져옴 (이미 위에서 임포트)
+from typing_extensions import override # 수정된 경로
 
-class JarvisDispatcher(LlmAgent):
+logger = logging.getLogger(__name__) # 로거 설정
+
+# .env 파일 로드 (모듈 로드 시점에 한 번 실행)
+dotenv.load_dotenv()
+
+# API 키 설정 시도
+API_KEY = os.getenv("GEMINI_API_KEY")
+if API_KEY:
+    try:
+        # genai.configure가 존재하면 API 키 설정 시도
+        genai.configure(api_key=API_KEY)
+        logger.info("Successfully configured genai with API key.")
+    except AttributeError:
+        logger.warning("genai.configure does not exist. Relying on Client() to pick up credentials from environment.")
+    except Exception as e:
+        logger.error(f"Error configuring genai with API key: {e}")
+else:
+    logger.warning("GEMINI_API_KEY not found in environment variables. LLM client initialization might fail.")
+
+DEFAULT_MODEL_NAME = os.getenv("VERTEX_MODEL_NAME", "gemini-1.5-flash-latest")
+DEFAULT_INSTRUCTION = (
+    "You are the central dispatcher for the Jarvis AI Framework. "
+    "Your primary role is to understand the user's request (provided as input) and delegate it to the most suitable specialized agent available in your tools. "
+    "Examine the descriptions of the available agents (tools) to make the best routing decision. "
+    "Provide ONLY the name of the single best agent to delegate to, or 'NO_AGENT' if none are suitable. Do not add any explanation." 
+    "\n\nAvailable Agents:\n" 
+    # Tool descriptions will be appended dynamically
+)
+
+class JarvisDispatcher(BaseAgent):
     """
     Jarvis AI 프레임워크의 중앙 디스패처.
-    요청을 분석하고 적절한 전문 에이전트로 라우팅합니다. (ADK 자동 위임 활용)
+    요청을 분석하고 적절한 전문 에이전트로 라우팅합니다. (직접 LLM 호출 기반 위임)
     """
-    # 클래스 변수로 필드 선언 (Pydantic 스타일)
+    # --- BaseAgent Fields ---
+    # name, description은 BaseAgent에서 처리됨
+
+    # --- JarvisDispatcher Specific Fields ---
     input_parser: InputParserAgent = Field(default_factory=InputParserAgent)
-    sub_agents: dict = Field(default_factory=dict)
-    # 추가: 현재 요청 처리 상태를 저장할 인스턴스 변수 (타입 힌트)
+    sub_agents: Dict[str, Agent] = Field(default_factory=dict)
+    tools: List[Agent] = Field(default_factory=list) # BaseAgent는 tools 속성을 가짐
     current_parsed_input: Optional[ParsedInput] = None
     current_original_language: Optional[str] = None
-    # Make self.tools a list managed by the instance
-    tools: List[Agent] = Field(default_factory=list)
-    # Pydantic 필드로 llm 선언 (LlmAgent가 내부적으로 사용할 것으로 기대)
-    llm: Any = None # 테스트에서 모킹할 수 있도록 Any 타입 사용 및 기본값 None 설정
+    llm_clients: Dict[str, Any] = Field(default_factory=dict, exclude=True)
+    # model과 instruction에 기본값 제공 (Field 사용)
+    model: str = Field(default=DEFAULT_MODEL_NAME)
+    instruction: str = Field(default=DEFAULT_INSTRUCTION)
+
+    # BaseAgent는 llm 속성이 없으므로 제거 또는 주석 처리
+    # llm: Any = Field(None, exclude=True)
 
     def __init__(self, **kwargs):
         """JarvisDispatcher 초기화"""
-        instruction = (
-            "You are the central dispatcher for the Jarvis AI Framework. "
-            "Your primary role is to understand the user's request (provided as input) and delegate it to the most suitable specialized agent available in your tools. "
-            "Examine the descriptions of the available agents (tools) to make the best routing decision. "
-            "Do not attempt to fulfill the request yourself; focus solely on delegation. "
-            "If multiple agents seem suitable, choose the best one. If no agent is suitable, indicate that routing is not possible."
-        )
-        super().__init__(
-            name="JarvisDispatcher",
-            description="Central dispatcher for the Jarvis AI Framework using ADK's automatic delegation based on sub-agent descriptions.",
-            model="gemini-2.0-flash-exp",
-            instruction=instruction,
-        )
-        # Ensure self.tools is initialized
-        self.tools = []
-        # 초기화는 Field의 default_factory에서 처리됨
-        # self.input_parser = InputParserAgent() # 제거
-        # self.sub_agents = {} # 제거
-        # TODO: 추후 Agent Hub 클라이언트 초기화 로직 추가
+        # Pydantic 모델이 필드를 처리하므로, __init__에서 model 파라미터 제거 가능
+        # 또는 kwargs에서 가져와 명시적으로 설정 가능
+        # 여기서는 kwargs를 통해 오버라이드 허용
+        # self.model 대신 모듈 레벨 기본값 사용
+        model_name = kwargs.pop('model', DEFAULT_MODEL_NAME)
+        # self.instruction 대신 모듈 레벨 기본값 사용
+        instruction_text = kwargs.pop('instruction', DEFAULT_INSTRUCTION)
+
+        # BaseAgent에 필요한 name, description 설정
+        name = kwargs.pop('name', "JarvisDispatcher")
+        description = kwargs.pop('description', "Central dispatcher for the Jarvis AI Framework.")
+
+        # BaseAgent 초기화
+        super().__init__(name=name, description=description, **kwargs)
+
+        # Dispatcher 특정 속성 설정 (Pydantic 필드 값 업데이트)
+        # 이 시점에서는 self.model, self.instruction 필드가 Pydantic에 의해
+        # 클래스 레벨 기본값(DEFAULT_...)으로 이미 설정되어 있을 수 있음.
+        # kwargs 값으로 명시적으로 덮어쓰는 것이 안전.
+        self.model = model_name
+        self.instruction = instruction_text
+        # llm_clients는 Pydantic Field default_factory로 초기화됨
+        # self.tools는 BaseAgent 또는 Pydantic Field default_factory로 초기화됨
+        if not hasattr(self, 'tools') or self.tools is None:
+             self.tools = []
+
+        # 디스패처 자신의 모델에 대한 LLM 클라이언트 초기화 시도 (이름 변경 반영)
+        self._initialize_llm_client(self.model)
+
+        # --- Init Log ---
+        logger.info(f"Initialized JarvisDispatcher (as BaseAgent).")
+        logger.info(f" - Name: {self.name}")
+        logger.info(f" - Description: {self.description[:50]}...")
+        logger.info(f" - Dispatcher Model: {self.model}")
+        logger.info(f" - Initial Tools: {self.tools}")
+        logger.info(f" - LLM Client for dispatcher ({self.model}): {self.llm_clients.get(self.model)}")
+        # --- Init Log End ---
+
+    def _initialize_llm_client(self, model_name: str):
+        """주어진 모델 이름에 대한 LLM 클라이언트를 초기화하고 llm_clients에 저장합니다."""
+        if not model_name or "mock-model" in model_name:
+            logger.info(f"Skipping LLM client initialization for model/key: {model_name}")
+            return
+
+        if model_name not in self.llm_clients:
+            # API 키가 있는지 먼저 확인
+            if not API_KEY:
+                logger.error(f"Cannot initialize LLM client for {model_name}: GEMINI_API_KEY is missing.")
+                self.llm_clients[model_name] = None
+                return
+            try:
+                # Client() 생성 시 API 키 명시적 전달
+                client = genai.Client(api_key=API_KEY)
+                self.llm_clients[model_name] = client
+                logger.info(f"Successfully initialized LLM client (genai.Client) with API key, associated with key: {model_name}, Type: {type(client)}")
+            except Exception as e:
+                logger.error(f"Failed to initialize LLM client (genai.Client) with API key, associated with key {model_name}: {e}")
+                self.llm_clients[model_name] = None
+
+    def get_llm_client(self, model_name: str) -> Any:
+        """지정된 모델 이름에 대한 초기화된 LLM 클라이언트를 반환합니다."""
+        if model_name not in self.llm_clients:
+            logger.warning(f"LLM client for model '{model_name}' not pre-initialized. Attempting initialization.")
+            self._initialize_llm_client(model_name)
+
+        client = self.llm_clients.get(model_name)
+        if client is None:
+             logger.error(f"LLM client for model '{model_name}' is not available (initialization might have failed).")
+        return client
 
     def register_agent(self, agent: Agent):
-        """하위 에이전트를 디스패처에 등록하고 tools 리스트를 업데이트합니다."""
+        """하위 에이전트를 디스패처에 등록하고, 필요한 LLM 클라이언트를 초기화하며, tools 리스트를 업데이트합니다."""
         if not isinstance(agent, Agent):
             raise TypeError("Registered agent must be an instance of Agent or its subclass.")
         if not agent.name:
             raise ValueError("Registered agent must have a valid name.")
 
+        # 에이전트의 모델에 대한 LLM 클라이언트 초기화 시도 (LlmAgent인 경우)
+        if isinstance(agent, LlmAgent) and agent.model:
+             self._initialize_llm_client(agent.model)
+
         is_overwriting = agent.name in self.sub_agents
         if is_overwriting:
-            print(f"Warning: Agent with name '{agent.name}' already registered. Overwriting.")
-            # Remove the old agent from tools list
-            self.tools = [tool for tool in self.tools if tool.name != agent.name]
+            logger.warning(f"Agent with name '{agent.name}' already registered. Overwriting.")
+            current_tools = [tool for tool in self.tools if getattr(tool, 'name', None) != agent.name]
+        else:
+            current_tools = list(self.tools)
 
         self.sub_agents[agent.name] = agent
-        # Add the new agent to the tools list
-        self.tools.append(agent)
-        print(f"Agent '{agent.name}' registered and added to tools list for ADK delegation.")
+        current_tools.append(agent)
+        self.tools = current_tools # BaseAgent의 tools 속성 업데이트
 
-    async def process_request(self, user_input: str) -> str: # Add return type hint
+        logger.info(f"Agent '{agent.name}' (type: {type(agent)}, model: {getattr(agent, 'model', 'N/A')}) registered. Current tools: {[getattr(t, 'name', 'N/A') for t in self.tools]}")
+
+    async def process_request(self, user_input: str) -> str:
         """
-        사용자 입력을 받아 파싱하고, ADK 자동 위임을 통해 적절한 에이전트로 라우팅 후 결과를 반환합니다.
+        사용자 입력을 받아 파싱하고, 직접 LLM 호출을 통해 위임할 에이전트 이름을 결정한 후,
+        결과 메시지를 반환합니다. (실제 에이전트 호출은 외부 Runner가 담당 가정)
         """
         # 1. Parse Input
+        if not self.input_parser:
+             logger.error("Input parser not initialized!")
+             return "Error: Input parser not available."
         parsed_input = await self.input_parser.process_input(user_input)
         self.current_parsed_input = parsed_input
         self.current_original_language = parsed_input.original_language if parsed_input else None
 
         if not self.current_parsed_input:
-            # TODO: Proper error handling/logging
-            print("Input parsing failed. Cannot proceed.")
+            logger.error("Input parsing failed. Cannot proceed.")
             return "Error: Input parsing failed."
 
-        # Use english_text for LLM interaction
         llm_input_text = self.current_parsed_input.english_text
-        print(f"Dispatcher received english text: {llm_input_text}")
-        print(f"Attempting delegation using ADK LlmAgent's capabilities with {len(self.tools)} registered tool(s)...")
+        logger.info(f"Dispatcher deciding delegation for: {llm_input_text[:100]}...")
 
-        # 2. ADK Delegation Logic
+        # 2. Prepare Prompt for Delegation Decision
+        # Generate the list of available tools/agents for the prompt
+        tool_descriptions = "\n".join([
+            f"- {getattr(tool, 'name', 'N/A')}: {getattr(tool, 'description', 'N/A')}"
+            for tool in self.tools
+        ])
+        # Combine instruction, tool descriptions, and user query
+        prompt = f"{self.instruction}\n{tool_descriptions}\n\nUser Request: {llm_input_text}"
+        logger.debug(f"Dispatcher Prompt:\n{prompt}")
+
+        # 3. Call LLM for Delegation Decision
+        dispatcher_llm_client = self.get_llm_client(self.model)
+        if not dispatcher_llm_client:
+            logger.error(f"LLM client for dispatcher (model key: {self.model}) not initialized!")
+            return "Error: LLM client not available for dispatcher."
+
         try:
-            # Use the agent's llm instance configured by LlmAgent __init__
-            response = await self.llm.generate_content_async(
-                llm_input_text,
-                tools=self.tools # Pass registered agents for delegation
+            logger.info(f"Calling dispatcher's LLM (model={self.model}) via Client for delegation decision.")
+            # Client 객체를 사용하여 generate_content_async 호출 (모델 이름 전달 필요)
+            # 수정: python-genai 1.11.0 방식인 aio.models 사용
+            response = await dispatcher_llm_client.aio.models.generate_content(
+                model=self.model, # 사용할 모델 이름 명시 (GenerativeModel과 달리 Client 사용 시 모델 지정 불필요할 수 있음 - 확인 필요)
+                contents=[Content(parts=[Part(text=prompt)])] # Content 객체 리스트로 전달
             )
 
-            # Extract text response, acknowledging potential complexities with function call handling
-            final_response_text = "No textual response generated." # Default
-            if isinstance(response, GenerateContentResponse) and response.parts:
-                text_parts = [part.text for part in response.parts if hasattr(part, 'text')]
-                if text_parts:
-                    final_response_text = "\n".join(text_parts)
-                
-                # Log if function calls were made (for debugging/future implementation)
-                function_calls = [part.function_call for part in response.parts if hasattr(part, 'function_call')]
-                if function_calls:
-                     print(f"ADK LLM responded with function call(s): {function_calls}. Further handling might be needed.")
+            logger.debug(f"Raw Delegation LLM Response type: {type(response)}")
+            logger.debug(f"Raw Delegation LLM Response: {response}")
 
-            print(f"Dispatcher processing finished. Raw English Response: {final_response_text}")
-            # TODO: Step 6 - Pass English result to ResponseGenerator
-            return final_response_text # Return English text
+            # Extract the suggested agent name from the response
+            delegated_agent_name = "NO_AGENT" # Default
+            if hasattr(response, 'text') and response.text:
+                raw_text = response.text.strip()
+                if raw_text and raw_text != "NO_AGENT" and raw_text in self.sub_agents:
+                    delegated_agent_name = raw_text
+                    logger.info(f"LLM suggested delegation to: {delegated_agent_name}")
+                elif raw_text and raw_text != "NO_AGENT":
+                    logger.warning(f"LLM suggested agent '{raw_text}' not found in registered agents.")
+                    delegated_agent_name = "NO_AGENT"
+                else:
+                    logger.info("LLM suggested no suitable agent (NO_AGENT or empty response).")
+                    delegated_agent_name = "NO_AGENT"
+            else:
+                logger.warning(f"Unexpected delegation LLM response: No text attribute or empty text. Type: {type(response)}, Response: {response}")
+                delegated_agent_name = "NO_AGENT"
 
+            # 4. Return result (delegated agent name or indication of no delegation)
+            # In a real scenario, the Runner would use this name to invoke the actual agent.
+            # Here, we just return a message indicating the decision.
+            if delegated_agent_name != "NO_AGENT":
+                return f"Delegating task to agent: {delegated_agent_name}"
+            else:
+                return "No suitable agent found to handle the request."
+
+        except AttributeError as ae:
+             # genai.Client() 구조 관련 오류 가능성 (예: aio.models 경로)
+             # 수정된 호출 방식에 대한 오류 처리 업데이트 필요
+             logger.error(f"AttributeError during dispatcher LLM call (using aio.models.generate_content): {ae}")
+             import traceback
+             logger.error(traceback.format_exc())
+             return f"Error during delegation decision (AttributeError): {ae}"
         except Exception as e:
-            # TODO: Proper error handling and logging
-            print(f"Error during dispatcher processing: {e}")
-            # Consider traceback.format_exc() for more details in logging
-            return f"Error during processing request: {e}"
+            import traceback
+            logger.error(f"Error during dispatcher LLM call: {e}")
+            logger.error(traceback.format_exc())
+            return f"Error during delegation decision: {e}"
 
-    # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
-    # TODO: 3.5. 결과 처리 및 반환
-    # TODO: 3.6. 에러 핸들링 
+    # BaseAgent에는 invoke 또는 _run_async_impl 이 필요함
+    # 기본 구현 또는 에러 발생시키도록 추가
+    @override
+    async def invoke(self, ctx: InvocationContext):
+        # Dispatcher 자체는 직접 invoke되지 않아야 함 (Runner가 process_request를 사용하도록)
+        # 또는 process_request를 호출하도록 구현?
+        # 여기서는 에러를 발생시켜 잘못된 사용을 방지
+        raise NotImplementedError("JarvisDispatcher should not be invoked directly. Use process_request or run via Runner.")
+
+    async def _run_async_impl(
+        self, ctx: InvocationContext
+    ) -> AsyncGenerator[Event, None]:
+         # Runner가 agent.run_async를 호출할 때 이 메소드가 실행될 수 있음.
+         # process_request를 호출하고 결과를 이벤트로 변환하는 방식으로 구현 가능
+         # user_input = ctx.get_last_user_message_text() # AttributeError 발생 지점
+         user_input = None
+         # InvocationContext 구조 변경 가능성에 대비하여 안전하게 접근
+         if ctx.user_content and hasattr(ctx.user_content, 'parts') and ctx.user_content.parts:
+             if hasattr(ctx.user_content.parts[0], 'text'):
+                 user_input = ctx.user_content.parts[0].text
+
+         if not user_input:
+              logger.warning("_run_async_impl called without user input text in context.")
+              # 수정: Event 생성자 사용
+              yield Event(
+                   author=self.name,
+                   content=Content(parts=[Part(text="Error: Could not get user input from context.")])
+                   # invocation_id 등 다른 필수 필드가 있다면 추가 필요
+              )
+              return
+
+         result_text = await self.process_request(user_input)
+
+         # 수정: Event 생성자 사용
+         yield Event(
+              author=self.name,
+              content=Content(parts=[Part(text=result_text)])
+              # invocation_id 등 다른 필수 필드가 있다면 추가 필요
+         )
+
+# Type alias 등은 BaseAgent와 호환되도록 확인/수정 필요 (현재 코드에서는 직접 사용 안함) 

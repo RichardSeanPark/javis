@@ -50,6 +50,7 @@ class JarvisDispatcher(LlmAgent):
             user_input: 사용자의 원본 입력 문자열.
         """
         # TODO: 3.3.2. self.input_parser.process_input() 호출하여 ParsedInput 객체 얻기
+        parsed_input = await self.input_parser.process_input(user_input)
         # TODO: 3.3.3. ParsedInput 객체와 original_language 정보 저장
         # TODO: 3.3.4. 라우팅 결정 로직 시작
         # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입

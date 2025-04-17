@@ -131,3 +131,5 @@
 ### 3.3. `JarvisDispatcher.process_request` 메서드 테스트
 - [X] `process_request` 메서드가 비동기 함수(`async def`)로 정의되어 있는지 확인
 - [X] `process_request` 메서드가 `user_input` 인자를 문자열(`str`) 타입으로 받는지 확인 (타입 힌트 검증)
+- [X] `process_request` 내부에서 `self.input_parser.process_input` 메서드가 `user_input` 인자와 함께 비동기적으로 호출되는지 확인 (Mock 사용)
+- [X] `self.input_parser.process_input` 호출 결과(Mock 객체)가 `parsed_input` 변수에 할당되는지 확인

@@ -58,8 +58,8 @@
         *   `entities`: 텍스트에서 추출된 주요 엔티티 정보 (선택적 딕셔너리 타입, `Optional[Dict[str, Any]]`).
         *   `domain`: 식별된 요청의 주 도메인 (선택적 문자열 타입, `Optional[str]`, 예: 'coding', 'general').
         *   필요에 따라 다른 관련 필드(예: 신뢰도 점수)를 추가할 수 있습니다.
-- [X] **2.2. `InputParserAgent` 클래스 정의 (`src/jarvis/components/input_parser.py`)**
-    - [X] ADK `LlmAgent` 상속
+- [ ] **2.2. `InputParserAgent` 클래스 정의 (`src/jarvis/components/input_parser.py`)**
+    - [ ] ADK `LlmAgent` 상속
         - 이 파일에서는 `google.adk` 모듈에서 `LlmAgent`와 `LlmConfig` 클래스를 가져옵니다.
         - 내부에서 정의한 `src.jarvis.models.input` 모듈에서 `ParsedInput` 클래스를 가져옵니다.
         - 필요시 Google Cloud와 Vertex AI 서비스를 위한 라이브러리를 가져옵니다.
@@ -68,23 +68,23 @@
         - 필요시 추가적인 모델 초기화 코드를 구현할 수 있습니다.
         - `process_input` 메서드를 정의하여 사용자 입력(`user_input`)을 받아 `ParsedInput` 객체를 반환하는 비동기 함수를 구현합니다.
         - 이 메서드의 상세 구현은 다음 단계에서 진행됩니다.
-- [X] **2.3. 언어 감지 기능 구현 (`process_input` 메서드 내)**
-    - [X] LLM 호출 로직 작성 (ADK `self.llm.generate_content` 또는 직접 클라이언트 사용)
-    - [X] 언어 감지용 프롬프트 설계 (예: `"Detect the language of the following text and return only the ISO 639-1 code:\n\nText: {user_input}"`)
-    - [X] LLM 응답에서 언어 코드(예: 'ko', 'en', 'ja', 'zh', 'fr' 등 ISO 639-1 표준 코드) 추출 및 `original_language` 변수에 저장
-- [X] **2.4. 영어 번역 기능 구현 (`process_input` 메서드 내)**
-    - [X] `original_language`가 'en'이 아닌 경우에만 실행
-    - [X] LLM 호출 로직 작성
-    - [X] 영어 번역용 프롬프트 설계 (예: `"Translate the following text from {original_language} to English:\n\nText: {user_input}"`)
-    - [X] LLM 응답에서 번역된 텍스트 추출 및 `english_text` 변수에 저장 (원본이 영어면 `user_input` 그대로 저장)
-- [X] **2.5. 의도/엔티티/도메인 분석 기능 구현 (`process_input` 메서드 내)**
-    - [X] LLM 호출 로직 작성 (입력은 `english_text` 사용, 내부 처리는 항상 영어로 진행)
-    - [X] 분석용 프롬프트 설계 (예: `"Analyze the following English text. Identify the primary intent (e.g., code_generation, question_answering, document_summary), extract key entities (as JSON if possible), and determine the main domain (e.g., coding, finance, general). Text: {english_text}"`)
-    - [X] LLM 응답 파싱하여 `intent`, `entities`, `domain` 추출 및 변수에 저장
-- [X] **2.6. `ParsedInput` 객체 생성 및 반환 (`process_input` 메서드 내)**
-    - [X] 수집된 정보 (`original_text`, `original_language`, `english_text`, `intent`, `entities`, `domain`)를 사용하여 `ParsedInput` 객체 인스턴스화
-    - [X] 생성된 `ParsedInput` 객체 반환
-- [X] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가
+- [ ] **2.3. 언어 감지 기능 구현 (`process_input` 메서드 내)**
+    - [ ] LLM 호출 로직 작성 (ADK `self.llm.generate_content` 또는 직접 클라이언트 사용)
+    - [ ] 언어 감지용 프롬프트 설계 (예: `"Detect the language of the following text and return only the ISO 639-1 code:\n\nText: {user_input}"`)
+    - [ ] LLM 응답에서 언어 코드(예: 'ko', 'en', 'ja', 'zh', 'fr' 등 ISO 639-1 표준 코드) 추출 및 `original_language` 변수에 저장
+- [ ] **2.4. 영어 번역 기능 구현 (`process_input` 메서드 내)**
+    - [ ] `original_language`가 'en'이 아닌 경우에만 실행
+    - [ ] LLM 호출 로직 작성
+    - [ ] 영어 번역용 프롬프트 설계 (예: `"Translate the following text from {original_language} to English:\n\nText: {user_input}"`)
+    - [ ] LLM 응답에서 번역된 텍스트 추출 및 `english_text` 변수에 저장 (원본이 영어면 `user_input` 그대로 저장)
+- [ ] **2.5. 의도/엔티티/도메인 분석 기능 구현 (`process_input` 메서드 내)**
+    - [ ] LLM 호출 로직 작성 (입력은 `english_text` 사용, 내부 처리는 항상 영어로 진행)
+    - [ ] 분석용 프롬프트 설계 (예: `"Analyze the following English text. Identify the primary intent (e.g., code_generation, question_answering, document_summary), extract key entities (as JSON if possible), and determine the main domain (e.g., coding, finance, general). Text: {english_text}"`)
+    - [ ] LLM 응답 파싱하여 `intent`, `entities`, `domain` 추출 및 변수에 저장
+- [ ] **2.6. `ParsedInput` 객체 생성 및 반환 (`process_input` 메서드 내)**
+    - [ ] 수집된 정보 (`original_text`, `original_language`, `english_text`, `intent`, `entities`, `domain`)를 사용하여 `ParsedInput` 객체 인스턴스화
+    - [ ] 생성된 `ParsedInput` 객체 반환
+- [ ] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가
 
 ## 3. 에이전트 라우팅 계층 (MCP/Dispatcher) (`src/jarvis/core/dispatcher.py`)
 

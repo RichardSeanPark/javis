@@ -79,39 +79,11 @@
 
 ## 2. 입력 처리 및 파싱 계층 테스트
 
-### 2.1. 데이터 모델 정의 테스트
-- [X] src/jarvis/models/input.py 파일 존재 확인
-- [X] ParsedInput 클래스가 pydantic.BaseModel을 상속하는지 확인
-- [X] 필수 필드(original_text, original_language, english_text) 존재 확인
-- [X] 선택적 필드(intent, entities, domain) 존재 확인
-- [X] 각 필드의 타입 및 기본값 설정 확인
-
-### 2.2. InputParserAgent 클래스 정의 테스트
-- [X] src/jarvis/components/input_parser.py 파일 존재 확인
-- [X] InputParserAgent 클래스가 LlmAgent를 상속하는지 확인
-- [X] __init__ 메서드에서 적절한 이름과 설명, "gemini-pro" 모델 설정 확인
-- [X] process_input 메서드 존재 확인 (비동기 함수)
-- [X] src/jarvis/components/__init__.py에 InputParserAgent 모듈 등록 확인
-
-### 2.3. 언어 감지 기능 테스트
-- [X] _detect_language 메서드 존재 확인
-- [-] 영어 텍스트 입력 시 'en' 반환 확인
-- [-] 한국어 텍스트 입력 시 'ko' 반환 확인
-- [-] 일본어 텍스트 입력 시 'ja' 반환 확인
-- [-] 중국어 텍스트 입력 시 'zh' 반환 확인
-
-### 2.4. 영어 번역 기능 테스트
-- [X] _translate_to_english 메서드 존재 확인
-- [-] 한국어 텍스트 입력 시 올바른 영어 번역 반환 확인
-- [-] 원본이 영어인 경우 그대로 반환하는 로직 확인
-
-### 2.5. 의도/엔티티/도메인 분석 기능 테스트
-- [X] _analyze_intent_and_entities 메서드 존재 확인
-- [-] "파이썬으로 피보나치 수열 코드 작성해줘" 입력 시 의도가 'code_generation'으로 분석되는지 확인
-- [-] "파이썬으로 피보나치 수열 코드 작성해줘" 입력 시 도메인이 'coding'으로 분석되는지 확인
-- [-] "내일 서울 날씨 어때?" 입력 시 적절한 엔티티 추출 확인
-
-### 2.6. ParsedInput 객체 생성 및 반환 테스트
-- [X] 한국어 입력 시 모든 필드가 올바르게 설정된 ParsedInput 객체 반환 확인
-- [X] 영어 입력 시 모든 필드가 올바르게 설정된 ParsedInput 객체 반환 확인
-- [X] JSON 직렬화/역직렬화 확인
+### 2.1. 데이터 모델 (ParsedInput) 테스트
+- [X] `src/jarvis/models/input.py` 파일 존재 확인
+- [X] `ParsedInput` 클래스가 `BaseModel`을 상속하는지 확인
+- [X] 필수 필드(`original_text`, `original_language`, `english_text`)가 정의되어 있는지 확인
+- [X] 선택적 필드(`intent`, `entities`, `domain`)가 정의되어 있는지 확인
+- [X] 필수 필드 누락 시 유효성 검사 오류 발생하는지 확인
+- [X] 모든 필드에 올바른 타입의 값을 할당할 수 있는지 확인
+- [X] 선택적 필드에 `None` 값을 할당할 수 있는지 확인

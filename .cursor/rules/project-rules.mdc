@@ -4,6 +4,7 @@ globs:
 alwaysApply: true
 ---
 # 아래의 순서대로 반드시 진행
+- 시작전 항상 프로젝트의 모든 코드들을 아주 자세히 분석.
 - 시작전 항상 anaconda env를 javis로 access할 것.
 - TODO.md 파일의 항목 하나씩 진행.
 - 코드 구현 또는 수정 완료 후 testcase-guide.md 아주 자세히 분석.

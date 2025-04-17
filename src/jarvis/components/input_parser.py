@@ -41,7 +41,7 @@ class InputParserAgent(LlmAgent):
         super().__init__(
             name="InputParser",
             description="Parses user input: detects language, translates to English, and analyzes intent, entities, and domain.",
-            model="gemini-1.5-flash", # ADK 에이전트가 사용할 기본 모델 (현재 직접 사용 안함)
+            model="gemini-2.0-flash-exp", # ADK 에이전트가 사용할 기본 모델 (현재 직접 사용 안함)
             instruction=instruction
         )
         # self.llm 디버깅 코드 제거
@@ -62,7 +62,7 @@ class InputParserAgent(LlmAgent):
                 f"Detect the language of the following text and return only the ISO 639-1 code:\\n\\n"
                 f"Text: {user_input}"
             )
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.0-flash-exp')
             response = await model.generate_content_async(lang_detection_prompt)
 
             final_response_text = response.text.strip().lower()
@@ -86,7 +86,7 @@ class InputParserAgent(LlmAgent):
                     f"Translate the following text from '{original_language}' to English:\\n\\n"
                     f"Text: {user_input}"
                 )
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.0-flash-exp')
                 response = await model.generate_content_async(translation_prompt)
                 translated_text = response.text.strip()
                 if translated_text:
@@ -113,7 +113,7 @@ class InputParserAgent(LlmAgent):
                 f"{{ \"intent\": \"example_intent\", \"entities\": {{ \"key1\": \"value1\" }}, \"domain\": \"example_domain\" }}\n\n"
                 f"Text: {english_text}"
             )
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.0-flash-exp')
             response = await model.generate_content_async(analysis_prompt)
             
             # 응답에서 JSON 추출 시도

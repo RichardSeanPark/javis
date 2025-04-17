@@ -65,7 +65,7 @@
         - 필요시 Google Cloud와 Vertex AI 서비스를 위한 라이브러리를 가져옵니다.
         - `InputParserAgent` 클래스를 정의하고 `LlmAgent`를 상속받습니다.
     - [X] `__init__` 메서드 구현
-        - 부모 클래스(`LlmAgent`) 초기화 시 `name`, `description`, `model` 파라미터 전달 (예: `model="gemini-1.5-flash"`).
+        - 부모 클래스(`LlmAgent`) 초기화 시 `name`, `description`, `model` 파라미터 전달 (예: `model="gemini-2.0-flash-exp"`).
         - 필요시 추가적인 모델 초기화 코드를 구현할 수 있습니다.
     - [X] `process_input` 메서드 정의
         - 사용자 입력(`user_input`)을 받아 `ParsedInput` 객체를 반환하는 비동기 함수(`async def`)로 구현합니다.
@@ -86,17 +86,17 @@
 - [X] **2.6. `ParsedInput` 객체 생성 및 반환 (`process_input` 메서드 내)**
     - [X] 수집된 정보 (`original_text`, `original_language`, `english_text`, `intent`, `entities`, `domain`)를 사용하여 `ParsedInput` 객체 인스턴스화
     - [X] 생성된 `ParsedInput` 객체 반환
-- [ ] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가
+- [-] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가
 
 ## 3. 에이전트 라우팅 계층 (MCP/Dispatcher) (`src/jarvis/core/dispatcher.py`)
 
-- [ ] **3.1. `JarvisDispatcher` 클래스 정의**
-    - [ ] 기존 임시 `root_agent`를 `JarvisDispatcher` 클래스로 변경 (ADK `LlmAgent` 상속)
-    - [ ] `__init__` 메서드 정의:
+- [X] **3.1. `JarvisDispatcher` 클래스 정의**
+    - [X] 기존 임시 `root_agent`를 `JarvisDispatcher` 클래스로 변경 (ADK `LlmAgent` 상속)
+    - [X] `__init__` 메서드 정의:
         *   `name="JarvisDispatcher"`, `description="Central dispatcher for the Jarvis AI Framework. Analyzes requests and routes them to the appropriate specialized agent."` 설정
-        *   `llm_config` 설정 (라우팅 결정 및 자동 위임용 모델, 예: `gemini-pro`)
+        *   `model="gemini-2.0-flash-exp"` 설정 (라우팅 결정 및 자동 위임용 모델, `LlmConfig` 대신 직접 전달)
         *   `InputParserAgent` 인스턴스 생성 및 멤버 변수로 저장 (`self.input_parser = InputParserAgent()`)
-        *   하위 도메인 에이전트들을 저장할 딕셔너리 또는 리스트 초기화 (`self.sub_agents = {}` 또는 `self.sub_agents_list = []`)
+        *   하위 도메인 에이전트들을 저장할 딕셔너리 또는 리스트 초기화 (`self.sub_agents = {}`)
         *   (나중에 추가) Agent Hub 클라이언트 초기화
 - [ ] **3.2. 하위 에이전트 등록 메서드 구현 (`register_agent`)**: 하위 에이전트 인스턴스를 `self.sub_agents` 또는 `self.sub_agents_list`에 추가하는 로직
 - [ ] **3.3. 메인 처리 로직 구현 (`__call__` 또는 `process_request` 메서드)**
@@ -128,13 +128,13 @@
 
 *   **4.1. 코딩 에이전트 (`src/jarvis/agents/coding_agent.py`)**
     - [ ] `CodingAgent` 클래스 정의 (ADK `LlmAgent` 상속)
-    - [ ] `__init__` 메서드: `name="CodingAgent"`, `description="Generates, analyzes, debugs, and optimizes code based on user requests in English."` 설정. `llm_config` 설정 (예: `gemini-pro` 또는 `codechat-bison`). 필요한 툴(코드 실행기 등) 등록.
+    - [ ] `__init__` 메서드: `name="CodingAgent"`, `description="Generates, analyzes, debugs, and optimizes code based on user requests in English."` 설정. `llm_config` 설정 (예: `gemini-2.0-flash-exp` 또는 `codechat-bison`). 필요한 툴(코드 실행기 등) 등록.
     - [ ] `instruction` 필드: 에이전트의 역할, 작동 방식, 출력 형식 등을 영어로 상세히 기술 (예: "You are an expert coding assistant. Analyze the provided English request and code snippet. Generate improved code, explain changes, or debug errors as requested. Use the available tools for execution or linting if necessary. Respond only in English.")
     - [ ] (툴 구현은 5단계에서) 코드 실행기 툴 인터페이스 정의 (`execute_python_code` 함수 시그니처)
     - [ ] 모듈 등록: `src/jarvis/agents/__init__.py` 생성 및 `from .coding_agent import CodingAgent` 추가
 *   **4.2. 지식 QA 에이전트 (`src/jarvis/agents/qa_agent.py`)**
     - [ ] `KnowledgeQA_Agent` 클래스 정의 (ADK `LlmAgent` 상속)
-    - [ ] `__init__` 메서드: `name="KnowledgeQA_Agent"`, `description="Answers general knowledge questions in English. Can use web search for up-to-date information."` 설정. `llm_config` 설정 (예: `gemini-pro`). 웹 검색 툴 등록.
+    - [ ] `__init__` 메서드: `name="KnowledgeQA_Agent"`, `description="Answers general knowledge questions in English. Can use web search for up-to-date information."` 설정. `llm_config` 설정 (예: `gemini-2.0-flash-exp`). 웹 검색 툴 등록.
     - [ ] `instruction` 필드: 역할, 웹 검색 사용 시점, 답변 형식 등을 영어로 기술 (예: "You are a helpful Q&A assistant. Answer the user's question in English based on your internal knowledge. If the question requires current information or knowledge you don't possess, use the web_search tool. Synthesize the search results into a concise answer. Respond only in English.")
     - [ ] (툴 구현은 5단계에서) 웹 검색 툴 인터페이스 정의 (`web_search` 함수 시그니처)
     - [ ] 모듈 등록: `src/jarvis/agents/__init__.py`에 `from .qa_agent import KnowledgeQA_Agent` 추가

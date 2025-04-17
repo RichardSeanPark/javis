@@ -108,3 +108,14 @@
 - [X] **의도/엔티티/도메인 분석 테스트 (Live API, 분석 오류)**: 분석 API 호출 중 오류 발생 시, `intent`, `entities`, `domain` 필드가 `None`으로 유지되는지 확인합니다 (오류 로깅 확인).
 - [X] **의도/엔티티/도메인 분석 테스트 (Live API, JSON 파싱 오류)**: 분석 API가 유효하지 않은 JSON 형식으로 응답했을 때, `intent`, `entities`, `domain` 필드가 `None`으로 유지되는지 확인합니다 (오류 로깅 확인).
 - [X] **최종 반환 객체 테스트 (Live API 통합)**: `process_input` 메서드가 모든 처리(언어 감지, 번역, 분석)를 거친 후 최종적으로 올바른 값들이 포함된 `ParsedInput` 객체를 반환하는지 확인합니다. (기존 `test_process_input_language_detection_and_translation_live` 테스트에 분석 결과 검증 추가하여 통합)
+
+## 3. 에이전트 라우팅 계층 (MCP/Dispatcher) 테스트
+
+### 3.1. `JarvisDispatcher` 클래스 정의 테스트
+- [X] `src/jarvis/core/dispatcher.py` 파일에 `JarvisDispatcher` 클래스가 정의되어 있고 `LlmAgent`를 상속하는지 확인
+- [X] `JarvisDispatcher` 인스턴스 생성 시 오류가 없는지 확인
+- [X] 생성된 인스턴스의 `name` 속성이 "JarvisDispatcher"인지 확인
+- [X] 생성된 인스턴스의 `description` 속성이 설정된 설명과 일치하는지 확인
+- [X] 생성된 인스턴스의 `model` 속성이 "gemini-2.0-flash-exp"인지 확인 (LlmConfig 제거 후 확인)
+- [X] 생성된 인스턴스의 `input_parser` 속성이 `InputParserAgent`의 인스턴스인지 확인
+- [X] 생성된 인스턴스의 `sub_agents` 속성이 빈 딕셔너리(`{}`)인지 확인

@@ -58,7 +58,7 @@ def test_input_parser_initialization(agent):
     assert agent.name == "InputParser"
     assert agent.description == "Parses user input: detects language, translates to English, and analyzes intent, entities, and domain."
     assert hasattr(agent, 'model')
-    assert agent.model == "gemini-1.5-flash"
+    assert agent.model == "gemini-2.0-flash-exp"
 
 def test_process_input_method_signature(agent):
     """

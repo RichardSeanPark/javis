@@ -207,7 +207,7 @@ Google ADK(Agent Development Kit)는 자비스 프레임워크의 에이전트 �
         name="WeatherAgent",
         description="날씨 정보 제공 및 관련 질문에 답변합니다.",
         tools=[weather_tool],
-        llm_config=LlmConfig(model="gemini-pro") # 사용할 LLM 모델 지정
+        llm_config=LlmConfig(model="gemini-2.0-flash-exp") # 사용할 LLM 모델 지정
     )
     class WeatherAgent:
         # ADK가 LLM 호출, 툴 사용 결정, 실행 등을 자동으로 처리

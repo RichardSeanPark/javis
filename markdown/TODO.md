@@ -98,7 +98,7 @@
         *   `InputParserAgent` 인스턴스 생성 및 멤버 변수로 저장 (`self.input_parser = InputParserAgent()`)
         *   하위 도메인 에이전트들을 저장할 딕셔너리 또는 리스트 초기화 (`self.sub_agents = {}`)
         *   (나중에 추가) Agent Hub 클라이언트 초기화
-- [ ] **3.2. 하위 에이전트 등록 메서드 구현 (`register_agent`)**: 하위 에이전트 인스턴스를 `self.sub_agents` 또는 `self.sub_agents_list`에 추가하는 로직
+- [X] **3.2. 하위 에이전트 등록 메서드 구현 (`register_agent`)**: 하위 에이전트 인스턴스를 `self.sub_agents` 또는 `self.sub_agents_list`에 추가하는 로직
 - [ ] **3.3. 메인 처리 로직 구현 (`__call__` 또는 `process_request` 메서드)**
     - [ ] 사용자 입력 문자열을 인자로 받음
     - [ ] `self.input_parser.process_input()` 호출하여 `ParsedInput` 객체 얻기

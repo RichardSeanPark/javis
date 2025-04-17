@@ -6,6 +6,8 @@ from google.adk.agents import LlmAgent
 # from google.adk.models import LlmConfig # 더 이상 사용되지 않음
 from ..components.input_parser import InputParserAgent
 from pydantic import Field # Field 임포트 추가
+from ..models.input import ParsedInput # ParsedInput 임포트 추가
+from typing import Optional # Optional 임포트 추가
 
 class JarvisDispatcher(LlmAgent):
     """
@@ -15,6 +17,9 @@ class JarvisDispatcher(LlmAgent):
     # 클래스 변수로 필드 선언 (Pydantic 스타일)
     input_parser: InputParserAgent = Field(default_factory=InputParserAgent)
     sub_agents: dict = Field(default_factory=dict)
+    # 추가: 현재 요청 처리 상태를 저장할 인스턴스 변수 (타입 힌트)
+    current_parsed_input: Optional[ParsedInput] = None
+    current_original_language: Optional[str] = None
 
     def __init__(self):
         """JarvisDispatcher 초기화"""
@@ -52,6 +57,8 @@ class JarvisDispatcher(LlmAgent):
         # TODO: 3.3.2. self.input_parser.process_input() 호출하여 ParsedInput 객체 얻기
         parsed_input = await self.input_parser.process_input(user_input)
         # TODO: 3.3.3. ParsedInput 객체와 original_language 정보 저장
+        self.current_parsed_input = parsed_input
+        self.current_original_language = parsed_input.original_language if parsed_input else None # None 체크 추가
         # TODO: 3.3.4. 라우팅 결정 로직 시작
         # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
         # TODO: 3.5. 결과 처리 및 반환

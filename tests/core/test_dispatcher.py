@@ -44,16 +44,17 @@ class TestJarvisDispatcher:
             "'user_input' 인자의 타입 힌트는 str이어야 합니다."
 
     async def test_process_request_calls_input_parser(self, mocker):
-        """process_request가 self.input_parser.process_input을 호출하는지 확인합니다."""
+        """process_request가 self.input_parser.process_input을 호출하고 결과를 저장하는지 확인합니다."""
         # Arrange
         mock_parsed_input = MagicMock(spec=ParsedInput) # 모의 반환값
+        mock_parsed_input.original_language = 'ko' # 모의 언어 코드 설정
         # InputParserAgent.process_input을 AsyncMock으로 모킹
         mock_process_input = AsyncMock(return_value=mock_parsed_input)
+        # mocker.patch.object를 사용하면 클래스의 메서드를 직접 패치할 수 있습니다.
+        # InputParserAgent 인스턴스가 생성될 때 process_input이 이 mock을 사용하게 됩니다.
         mocker.patch.object(InputParserAgent, 'process_input', new=mock_process_input)
         
-        # Dispatcher 인스턴스 생성 (이제 모킹된 InputParserAgent를 사용할 것임)
-        # 단, Field(default_factory=...) 때문에 직접 인스턴스를 생성해야 할 수도 있음
-        # 또는 dispatcher fixture를 수정하여 mocker를 사용하도록 함
+        # Dispatcher 인스턴스 생성 
         dispatcher_instance = JarvisDispatcher()
         test_input = "테스트 입력"
 
@@ -63,7 +64,9 @@ class TestJarvisDispatcher:
         # Assert
         # process_input이 test_input 인자와 함께 한 번 호출되었는지 확인
         mock_process_input.assert_awaited_once_with(test_input)
-        # 반환값이 변수에 할당되는지 직접 검증은 어려우나, 호출 확인으로 간접 검증
+        # 결과가 인스턴스 변수에 저장되었는지 확인
+        assert dispatcher_instance.current_parsed_input == mock_parsed_input
+        assert dispatcher_instance.current_original_language == 'ko'
 
     # 이전 fixture 방식 사용 시:
     # async def test_process_request_calls_input_parser_with_fixture(self, dispatcher, mock_input_parser):

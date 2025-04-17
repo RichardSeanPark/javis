@@ -28,8 +28,35 @@ class JarvisDispatcher(LlmAgent):
         # self.sub_agents = {} # 제거
         # TODO: 추후 Agent Hub 클라이언트 초기화 로직 추가
 
-    # TODO: 3.2. 하위 에이전트 등록 메서드 구현 (register_agent)
+    def register_agent(self, agent: LlmAgent):
+        """하위 에이전트를 디스패처에 등록합니다."""
+        if not isinstance(agent, LlmAgent):
+            raise TypeError("Registered agent must be an instance of LlmAgent or its subclass.")
+        if not agent.name:
+            raise ValueError("Registered agent must have a valid name.")
+        if agent.name in self.sub_agents:
+            # TODO: 로깅 라이브러리를 사용하여 경고 로깅 (logging.warning 사용)
+            print(f"Warning: Agent with name '{agent.name}' already registered. Overwriting.")
+            # logger.warning(f"Agent with name '{agent.name}' already registered. Overwriting.") 
+        self.sub_agents[agent.name] = agent
+        print(f"Agent '{agent.name}' registered successfully.")
+
     # TODO: 3.3. 메인 처리 로직 구현 (__call__ 또는 process_request 메서드)
+    async def process_request(self, user_input: str):
+        """
+        사용자 입력을 받아 처리하고 적절한 에이전트로 라우팅하는 메인 로직.
+        
+        Args:
+            user_input: 사용자의 원본 입력 문자열.
+        """
+        # TODO: 3.3.2. self.input_parser.process_input() 호출하여 ParsedInput 객체 얻기
+        # TODO: 3.3.3. ParsedInput 객체와 original_language 정보 저장
+        # TODO: 3.3.4. 라우팅 결정 로직 시작
+        # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
+        # TODO: 3.5. 결과 처리 및 반환
+        # TODO: 3.6. 에러 핸들링
+        pass
+
     # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
     # TODO: 3.5. 결과 처리 및 반환
     # TODO: 3.6. 에러 핸들링 

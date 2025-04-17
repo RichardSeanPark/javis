@@ -119,3 +119,15 @@
 - [X] 생성된 인스턴스의 `model` 속성이 "gemini-2.0-flash-exp"인지 확인 (LlmConfig 제거 후 확인)
 - [X] 생성된 인스턴스의 `input_parser` 속성이 `InputParserAgent`의 인스턴스인지 확인
 - [X] 생성된 인스턴스의 `sub_agents` 속성이 빈 딕셔너리(`{}`)인지 확인
+
+### 3.2. `JarvisDispatcher.register_agent` 메서드 테스트
+- [X] 유효한 `LlmAgent` 인스턴스를 성공적으로 등록하는지 확인 (`sub_agents` 딕셔너리에 추가되는지 검증)
+- [X] 등록 시 콘솔에 "Agent '{agent.name}' registered successfully." 메시지가 출력되는지 확인 (캡처 또는 Mock 사용)
+- [X] `LlmAgent`가 아닌 다른 타입의 객체를 등록 시 `TypeError`가 발생하는지 확인
+- [X] `name` 속성이 없는 에이전트 인스턴스 등록 시 `ValueError`가 발생하는지 확인
+- [X] 동일한 이름의 에이전트를 다시 등록할 때 기존 에이전트를 덮어쓰는지 확인 (`sub_agents` 내용 변경 검증)
+- [X] 동일한 이름의 에이전트를 다시 등록할 때 콘솔에 "Warning: Agent with name '{agent.name}' already registered. Overwriting." 경고 메시지가 출력되는지 확인 (캡처 또는 Mock 사용)
+
+### 3.3. `JarvisDispatcher.process_request` 메서드 테스트
+- [X] `process_request` 메서드가 비동기 함수(`async def`)로 정의되어 있는지 확인
+- [X] `process_request` 메서드가 `user_input` 인자를 문자열(`str`) 타입으로 받는지 확인 (타입 힌트 검증)

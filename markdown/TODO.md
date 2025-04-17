@@ -100,7 +100,7 @@
         *   (나중에 추가) Agent Hub 클라이언트 초기화
 - [X] **3.2. 하위 에이전트 등록 메서드 구현 (`register_agent`)**: 하위 에이전트 인스턴스를 `self.sub_agents` 또는 `self.sub_agents_list`에 추가하는 로직
 - [ ] **3.3. 메인 처리 로직 구현 (`__call__` 또는 `process_request` 메서드)**
-    - [ ] 사용자 입력 문자열을 인자로 받음
+    - [X] 사용자 입력 문자열을 인자로 받음
     - [ ] `self.input_parser.process_input()` 호출하여 `ParsedInput` 객체 얻기
     - [ ] `ParsedInput` 객체와 `original_language` 정보 저장
     - [ ] **라우팅 결정 로직 시작 (단계적 구현)**

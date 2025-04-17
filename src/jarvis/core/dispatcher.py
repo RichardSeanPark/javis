@@ -60,10 +60,36 @@ class JarvisDispatcher(LlmAgent):
         self.current_parsed_input = parsed_input
         self.current_original_language = parsed_input.original_language if parsed_input else None # None 체크 추가
         # TODO: 3.3.4. 라우팅 결정 로직 시작
+        selected_agent = None
+        if self.current_parsed_input:
+            # 초기 규칙 기반 라우팅 (intent 또는 domain 기준)
+            # 예시: intent가 'code_generation'이거나 domain이 'coding'이면 CodingAgent 선택
+            #       intent가 'question_answering'이거나 domain이 'general'이면 KnowledgeQA_Agent 선택
+            # 실제 에이전트 이름은 등록 방식에 따라 달라짐 (4단계에서 정의)
+            intent = self.current_parsed_input.intent
+            domain = self.current_parsed_input.domain
+
+            # TODO: 향후 CodingAgent, KnowledgeQA_Agent 등의 실제 이름으로 변경 필요
+            if (intent == 'code_generation' or domain == 'coding') and 'CodingAgent' in self.sub_agents:
+                selected_agent = self.sub_agents['CodingAgent']
+            elif (intent == 'question_answering' or domain == 'general') and 'KnowledgeQA_Agent' in self.sub_agents:
+                selected_agent = self.sub_agents['KnowledgeQA_Agent']
+            # TODO: 추가적인 라우팅 규칙 또는 기본 에이전트 설정
+
         # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
+        if selected_agent:
+            # TODO: 선택된 에이전트 호출 로직 (다음 단계에서 구현)
+            print(f"Routing to: {selected_agent.name}") # 임시 출력
+            pass 
+        else:
+            # TODO: 처리할 에이전트가 없을 경우의 로직 (예: 기본 에이전트 또는 에러 처리)
+            print("No suitable agent found for routing.") # 임시 출력
+            pass
+        
         # TODO: 3.5. 결과 처리 및 반환
         # TODO: 3.6. 에러 핸들링
-        pass
+        # 임시 반환값
+        return "Processing complete (placeholder)."
 
     # TODO: 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입
     # TODO: 3.5. 결과 처리 및 반환

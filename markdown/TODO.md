@@ -104,7 +104,7 @@
     - [X] `self.input_parser.process_input()` 호출하여 `ParsedInput` 객체 얻기
     - [X] `ParsedInput` 객체와 `original_language` 정보 저장
     - [ ] **라우팅 결정 로직 시작 (단계적 구현)**
-        - [ ] **3.3.1. 규칙 기반 라우팅 구현**: `ParsedInput.intent` 또는 `ParsedInput.domain` 기반으로 특정 키를 가진 `self.sub_agents`를 직접 선택하는 조건문 추가 (초기 단계)
+        - [X] **3.3.1. 규칙 기반 라우팅 구현**: `ParsedInput.intent` 또는 `ParsedInput.domain` 기반으로 특정 키를 가진 `self.sub_agents`를 직접 선택하는 조건문 추가 (초기 단계)
         - [ ] **3.3.2. ADK 자동 위임 설정**: 
             * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)
             * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 에이전트에 위임하도록 설정

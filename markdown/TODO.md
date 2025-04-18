@@ -99,14 +99,15 @@
         *   하위 도메인 에이전트들을 저장할 딕셔너리 또는 리스트 초기화 (`self.sub_agents = {}`)
         *   (나중에 추가) Agent Hub 클라이언트 초기화
 - [X] **3.2. 하위 에이전트 등록 메서드 구현 (`register_agent`)**: 하위 에이전트 인스턴스를 `self.sub_agents` 또는 `self.sub_agents_list`에 추가하는 로직
-- [ ] **3.3. 메인 처리 로직 구현 (`__call__` 또는 `process_request` 메서드)**
+- [X] **3.3. 메인 처리 로직 구현 (`__call__` 또는 `process_request` 메서드)**
     - [X] 사용자 입력 문자열을 인자로 받음
     - [X] `self.input_parser.process_input()` 호출하여 `ParsedInput` 객체 얻기
     - [X] `ParsedInput` 객체와 `original_language` 정보 저장
-    - [ ] **라우팅 결정 로직 시작 (단계적 구현)**
+    - [X] **라우팅 결정 로직 시작 (단계적 구현)**
         - [X] **3.3.1. 규칙 기반 라우팅 구현**: `ParsedInput.intent` 또는 `ParsedInput.domain` 기반으로 특정 키를 가진 `self.sub_agents`를 직접 선택하는 조건문 추가 (초기 단계)
-        - [X] **3.3.2. ADK 자동 위임 설정**: \n            * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)\n            * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 에이전트에 위임하도록 설정\n            * 디스패처의 `instruction`에 라우팅 가이드라인 추가 (예: \"Route the user\'s request based on the following specialized agents: ...\")\n            * ADK의 자동 위임 기능을 활용하여 LLM이 자연스럽게 적합한 하위 에이전트를 선택하도록 함 (Live API 테스트 포함)
-        - [ ] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):\n            *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)\n            *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄\n            *   검색된 A2A 에이전트의 Agent Card를 평가하여 최적의 에이전트 선택\n            *   선택된 A2A 에이전트 호출 로직 구현 (A2A 프로토콜 메시지 구성 및 전송)
+        - [X] **3.3.2. ADK 자동 위임 설정**: \
+            * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)\n            * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 하위 에이전트에 위임하도록 설정\n            * 디스패처의 `instruction`에 라우팅 가이드라인 추가 (예: \"Route the user\'s request based on the following specialized agents: ...\")\n            * ADK의 자동 위임 기능을 활용하여 LLM이 자연스럽게 적합한 하위 에이전트를 선택하도록 함 (Live API 테스트 포함)
+         - [-] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):\n            *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)\n            *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄\n            *   검색된 A2A 에이전트의 Agent Card를 평가하여 최적의 에이전트 선택
 - [ ] **3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입**
     - [ ] 선택된 하위 에이전트(ADK) 호출 시, `ParsedInput.english_text`와 필요한 컨텍스트(`original_language`, 대화 이력 등) 전달 로직
     - [ ] 에이전트에게 허용된 툴 목록 및 설정(API 키 등) 주입 로직 설계 (ADK 방식 활용)

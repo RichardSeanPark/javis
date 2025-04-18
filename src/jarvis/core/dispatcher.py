@@ -174,6 +174,7 @@ class JarvisDispatcher(BaseAgent):
         """
         사용자 입력을 받아 파싱하고, 직접 LLM 호출을 통해 위임할 에이전트 이름을 결정한 후,
         결과 메시지를 반환합니다. (실제 에이전트 호출은 외부 Runner가 담당 가정)
+        A2A 동적 검색 로직 placeholder 추가.
         """
         # 1. Parse Input
         if not self.input_parser:
@@ -206,6 +207,8 @@ class JarvisDispatcher(BaseAgent):
             logger.error(f"LLM client for dispatcher (model key: {self.model}) not initialized!")
             return "Error: LLM client not available for dispatcher."
 
+        delegated_agent_name = "NO_AGENT" # Default
+
         try:
             logger.info(f"Calling dispatcher's LLM (model={self.model}) via Client for delegation decision.")
             # Client 객체를 사용하여 generate_content_async 호출 (모델 이름 전달 필요)
@@ -219,42 +222,82 @@ class JarvisDispatcher(BaseAgent):
             logger.debug(f"Raw Delegation LLM Response: {response}")
 
             # Extract the suggested agent name from the response
-            delegated_agent_name = "NO_AGENT" # Default
             if hasattr(response, 'text') and response.text:
                 raw_text = response.text.strip()
-                if raw_text and raw_text != "NO_AGENT" and raw_text in self.sub_agents:
+                # Simple check if the LLM returned a valid agent name from the list
+                if raw_text and raw_text in self.sub_agents:
                     delegated_agent_name = raw_text
                     logger.info(f"LLM suggested delegation to: {delegated_agent_name}")
                 elif raw_text and raw_text != "NO_AGENT":
-                    logger.warning(f"LLM suggested agent '{raw_text}' not found in registered agents.")
-                    delegated_agent_name = "NO_AGENT"
-                else:
-                    logger.info("LLM suggested no suitable agent (NO_AGENT or empty response).")
-                    delegated_agent_name = "NO_AGENT"
+                    logger.warning(f"LLM suggested agent '{raw_text}' but it's not registered or invalid.")
+                    # Keep delegated_agent_name as "NO_AGENT"
+                else: # Handles "NO_AGENT" or empty response
+                    logger.info("LLM suggested no suitable internal agent (NO_AGENT or empty response).")
+                    # Keep delegated_agent_name as "NO_AGENT"
             else:
                 logger.warning(f"Unexpected delegation LLM response: No text attribute or empty text. Type: {type(response)}, Response: {response}")
-                delegated_agent_name = "NO_AGENT"
-
-            # 4. Return result (delegated agent name or indication of no delegation)
-            # In a real scenario, the Runner would use this name to invoke the actual agent.
-            # Here, we just return a message indicating the decision.
-            if delegated_agent_name != "NO_AGENT":
-                return f"Delegating task to agent: {delegated_agent_name}"
-            else:
-                return "No suitable agent found to handle the request."
+                # Keep delegated_agent_name as "NO_AGENT"
 
         except AttributeError as ae:
              # genai.Client() 구조 관련 오류 가능성 (예: aio.models 경로)
              # 수정된 호출 방식에 대한 오류 처리 업데이트 필요
              logger.error(f"AttributeError during dispatcher LLM call (using aio.models.generate_content): {ae}")
              import traceback
-             logger.error(traceback.format_exc())
-             return f"Error during delegation decision (AttributeError): {ae}"
+             traceback.print_exc() # Print stack trace for debugging
+             return "Error: Internal error during LLM call for delegation."
         except Exception as e:
+            logger.error(f"Exception during dispatcher LLM call: {e}")
             import traceback
-            logger.error(f"Error during dispatcher LLM call: {e}")
-            logger.error(traceback.format_exc())
-            return f"Error during delegation decision: {e}"
+            traceback.print_exc() # Print stack trace for debugging
+            return "Error: Exception during LLM call for delegation."
+
+        # --- 3.3.3: A2A Dynamic Discovery Logic ---
+        if delegated_agent_name == "NO_AGENT":
+            logger.info("No suitable internal agent found via LLM. Attempting A2A Discovery (Placeholder).")
+            # --- Placeholder Logic Start (Keep comments for future implementation) ---
+            # 1. Construct A2A Discovery Query (based on parsed_input.intent, entities, domain, etc.)
+            #    query_capabilities = [parsed_input.intent, parsed_input.domain] # Example
+            #    logger.debug(f"Constructing A2A discovery query with capabilities: {query_capabilities}")
+
+            # 2. Call Agent Hub Client's discovery method
+            #    try:
+            #        # agent_hub_client = self.get_agent_hub_client() # Needs implementation
+            #        # discovered_agents = await agent_hub_client.discover(capabilities=query_capabilities)
+            #        discovered_agents = [] # Placeholder: Assume no agents found for now
+            #        logger.info(f"A2A Discovery Result (Placeholder): Found {len(discovered_agents)} agents.")
+            #    except Exception as hub_error:
+            #        logger.error(f"Error during A2A Discovery (Placeholder): {hub_error}")
+            #        discovered_agents = []
+
+            # 3. Evaluate discovered agents (Agent Cards) and select the best one
+            #    selected_a2a_agent = None
+            #    if discovered_agents:
+            #        # Evaluation logic based on agent cards, cost, reliability etc.
+            #        # selected_a2a_agent = discovered_agents[0] # Placeholder: select the first one
+            #        logger.info(f"Selected A2A Agent (Placeholder): {selected_a2a_agent}")
+            #        pass # Assign to delegated_agent_name or handle differently
+
+            # 4. If an A2A agent is selected, prepare for A2A call (details in step 7)
+            #    if selected_a2a_agent:
+            #         # This might involve returning specific instructions or metadata
+            #         # for the runner to initiate the A2A call.
+            #         # For now, just log it.
+            #         logger.info(f"Would initiate A2A call to {selected_a2a_agent} (Placeholder).")
+            #         # return f"Delegating task via A2A to: {selected_a2a_agent.name}" # Example A2A return
+            # --- Placeholder Logic End ---
+
+            # For now, since A2A is just a placeholder, we proceed as if no external agent was found.
+            # The final return statement handles the "NO_AGENT" case correctly.
+            pass
+
+        # 4. Return result (delegated agent name or indication of no delegation)
+        # In a real scenario, the Runner would use this name to invoke the actual agent.
+        # Here, we just return a message indicating the decision.
+        if delegated_agent_name != "NO_AGENT":
+            return f"Delegating task to agent: {delegated_agent_name}"
+        else:
+            # This message is returned if internal LLM said NO_AGENT *and* A2A placeholder didn't find one
+            return "No suitable internal or external agent found to handle the request."
 
     # BaseAgent에는 invoke 또는 _run_async_impl 이 필요함
     # 기본 구현 또는 에러 발생시키도록 추가

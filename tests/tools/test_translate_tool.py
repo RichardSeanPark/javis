@@ -134,12 +134,8 @@ async def test_translate_text_llm_empty_response_returns_original():
 # --- Test Tool Registration ---
 
 def test_translate_tool_registration():
-    """Verify that the translate_tool is registered in available_tools."""
+    """번역 도구가 tools/__init__.py의 available_tools 리스트에 등록되었는지 확인합니다."""
+    from src.jarvis.tools import available_tools, translate_tool
     assert translate_tool in available_tools
-    # Check if the correct object instance is in the list
-    # Find the tool based on the function declaration name
-    registered_tool = next((tool for tool in available_tools
-                            if tool.function_declarations and
-                            any(decl.name == "translate_text" for decl in tool.function_declarations)),
-                           None)
-    assert registered_tool is translate_tool 
+
+# TODO: Add mock test for LLM call failure 

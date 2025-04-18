@@ -79,4 +79,9 @@ async def test_web_search_api_error(mock_ddgs_class):
     mock_ddgs_instance.atext.assert_awaited_once_with(query, max_results=5)
     assert "An error occurred while searching the web: API connection failed" in result
 
-# TODO: Add test for registration in tools/__init__.py after implementing that step 
+# TODO: Add test for registration in tools/__init__.py after implementing that step
+
+def test_web_search_tool_registration():
+    """웹 검색 도구가 tools/__init__.py의 available_tools 리스트에 등록되었는지 확인합니다."""
+    from src.jarvis.tools import available_tools, web_search_tool
+    assert web_search_tool in available_tools 

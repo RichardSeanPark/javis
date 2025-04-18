@@ -72,4 +72,9 @@ async def test_execute_potentially_dangerous_code():
     # For now, we expect it might run (hence the skip).
     assert "Error" in result or "Restricted" in result # Ideal assertion
 
-# TODO: Add test for registration in tools/__init__.py after implementing that step 
+# TODO: Add test for registration in tools/__init__.py after implementing that step
+
+def test_code_execution_tool_registration():
+    """코드 실행 도구가 tools/__init__.py의 available_tools 리스트에 등록되었는지 확인합니다."""
+    from src.jarvis.tools import available_tools, code_execution_tool
+    assert code_execution_tool in available_tools 

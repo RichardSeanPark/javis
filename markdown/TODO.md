@@ -158,7 +158,7 @@
         - [-] **보안 중요**: 코드를 안전한 샌드박스 환경(예: `docker` 컨테이너 실행, `restrictedpython`, `exec` 사용 시 매우 주의)에서 실행하는 로직 구현 # 현재 exec 사용, 추후 개선 필요
         - [X] 실행 결과(stdout, stderr) 캡처 및 반환 로직
         - [X] ADK `Tool` 객체 생성 (`description` 자동 설정됨)
-    - [ ] **툴 모듈 등록 (`src/jarvis/tools/__init__.py`)**: 생성된 `Tool` 객체들 임포트 및 리스트로 관리 (예: `available_tools = [translate_tool, web_search_tool, code_execution_tool]`)
+    - [X] **툴 모듈 등록 (`src/jarvis/tools/__init__.py`)**: 생성된 `Tool` 객체들 임포트 및 리스트로 관리 (예: `available_tools = [translate_tool, web_search_tool, code_execution_tool]`)
 *   **5.2. 툴 레지스트리 및 주입 로직 (`src/jarvis/core/dispatcher.py`)**
     - [ ] `src/jarvis/tools` 에서 `available_tools` 임포트
     - [ ] Dispatcher가 하위 에이전트 호출 시, 해당 에이전트에 필요한 툴만 전달하는 로직 설계 (예: `CodingAgent`에는 `code_execution_tool`만 전달)

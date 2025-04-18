@@ -220,7 +220,7 @@
 - [X] **기본 검색 테스트 (Mock)**: `DDGS().atext`가 Mock 결과를 반환하도록 설정하고, `web_search` 함수 호출 시 예상되는 포맷의 문자열 결과가 반환되는지 확인
 - [X] **결과 없음 테스트 (Mock)**: `DDGS().atext`가 빈 리스트를 반환하도록 설정하고, `web_search` 함수 호출 시 "No relevant information found..." 메시지가 반환되는지 확인
 - [X] **API 호출 오류 테스트 (Mock)**: `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
-- [ ] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+- [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
 ### 5.3. 코드 실행 툴 (`code_execution_tool`) 테스트
 - [X] `src/jarvis/tools/code_execution_tool.py` 파일에 `code_execution_tool` ADK `FunctionTool` 객체가 정의되어 있는지 확인
@@ -234,7 +234,7 @@
 - [X] **예외 발생 테스트**: `1 / 0` 과 같이 예외를 발생시키는 코드 실행 시 `Error during execution:` 메시지와 함께 `ZeroDivisionError` 및 traceback 정보가 반환되는지 확인
 - [X] **출력 없는 코드 테스트**: 변수 할당만 하는 코드 실행 시 "Code executed successfully with no output." 메시지가 반환되는지 확인
 - [-] **보안 테스트 (exec 제한 - 선택적)**: `__import__('os').system('ls')` 와 같이 위험할 수 있는 코드 실행 시 제한되거나 오류가 발생하는지 확인 (현재 구현에서는 실행될 수 있음 - 주의) # Skipped
-- [ ] `src/jarvis/tools/__init__.py`에 `code_execution_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+- [X] `src/jarvis/tools/__init__.py`에 `code_execution_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
 ### 5.4. 툴 레지스트리 및 주입 테스트
 - [-] (구현 예정)

@@ -159,3 +159,24 @@
 - [X] **A2A 플레이스홀더 진입 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request` 실행 시 A2A 플레이스홀더 블록 내의 로그("Checking A2A Hub (Placeholder)")가 출력되는지 확인.
 - [X] **A2A 플레이스홀더 후 반환 메시지 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request`가 최종적으로 "No suitable internal or external agent found to handle the request." 메시지를 반환하는지 확인.
 - [-] **A2A 실제 검색/호출 테스트**: (7단계에서 구현 예정)
+
+## 4. 도메인별 에이전트 모듈 계층 테스트
+
+### 4.1. 코딩 에이전트 (`CodingAgent`) 테스트
+- [X] `src/jarvis/agents/coding_agent.py` 파일이 존재하는지 확인
+- [X] `CodingAgent` 클래스가 `LlmAgent`를 상속하는지 확인
+- [X] `CodingAgent` 인스턴스 생성 시 오류가 없는지 확인 (기본값 사용)
+- [X] 생성된 인스턴스의 `name` 속성이 "CodingAgent"인지 확인
+- [X] 생성된 인스턴스의 `description` 속성이 설정된 설명과 일치하는지 확인
+- [X] 생성된 인스턴스의 `model` 속성이 설정된 모델 이름(기본값 `gemini-1.5-flash-latest` 또는 환경변수)과 일치하는지 확인
+- [X] 생성된 인스턴스의 `instruction` 속성이 정의된 기본 지침과 일치하는지 확인
+- [X] `__init__`에 `name`, `description`, `model` 인자를 전달하여 인스턴스 생성 시 해당 속성이 올바르게 설정되는지 확인
+- [-] **툴 등록 테스트**: (5단계에서 툴 구현 후) 코드 실행기 툴이 `__init__`에서 `tools` 리스트에 추가되는지 확인
+- [-] **기본 동작 테스트 (Mock)**: (툴 구현 후) 간단한 코딩 요청 시 LLM이 예상되는 지침 및 입력으로 호출되는지 확인 (Mock 사용)
+- [-] **기본 동작 테스트 (Live API)**: (툴 구현 후) 간단한 코딩 요청 시 예상되는 코드 생성 결과 또는 설명이 반환되는지 확인 (Live API, 선택적)
+
+### 4.2. 지식 QA 에이전트 (`KnowledgeQA_Agent`) 테스트
+- [-] (구현 예정)
+
+### 4.3. Dispatcher에 에이전트 등록 테스트
+- [-] (구현 예정)

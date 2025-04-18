@@ -122,10 +122,10 @@
 ## 4. 도메인별 에이전트 모듈 계층 (초기 에이전트 2개 구현)
 
 *   **4.1. 코딩 에이전트 (`src/jarvis/agents/coding_agent.py`)**
-    - [ ] `CodingAgent` 클래스 정의 (ADK `LlmAgent` 상속)
-    - [ ] `__init__` 메서드: `name="CodingAgent"`, `description="Generates, analyzes, debugs, and optimizes code based on user requests in English."` 설정. `llm_config` 설정 (예: `gemini-2.0-flash-exp` 또는 `codechat-bison`). 필요한 툴(코드 실행기 등) 등록.
-    - [ ] `instruction` 필드: 에이전트의 역할, 작동 방식, 출력 형식 등을 영어로 상세히 기술 (예: "You are an expert coding assistant. Analyze the provided English request and code snippet. Generate improved code, explain changes, or debug errors as requested. Use the available tools for execution or linting if necessary. Respond only in English.")
-    - [ ] (툴 구현은 5단계에서) 코드 실행기 툴 인터페이스 정의 (`execute_python_code` 함수 시그니처)
+    - [X] `CodingAgent` 클래스 정의 (ADK `LlmAgent` 상속)
+    - [X] `__init__` 메서드: `name="CodingAgent"`, `description="Generates, analyzes, debugs, and optimizes code based on user requests in English."`, `model` 설정. 필요한 툴(코드 실행기 등) 등록 placeholder.
+    - [X] `instruction` 필드: 에이전트의 역할, 작동 방식, 출력 형식 등을 영어로 상세히 기술
+    - [-] (툴 구현은 5단계에서) 코드 실행기 툴 인터페이스 정의 (`execute_python_code` 함수 시그니처)
     - [ ] 모듈 등록: `src/jarvis/agents/__init__.py` 생성 및 `from .coding_agent import CodingAgent` 추가
 *   **4.2. 지식 QA 에이전트 (`src/jarvis/agents/qa_agent.py`)**
     - [ ] `KnowledgeQA_Agent` 클래스 정의 (ADK `LlmAgent` 상속)

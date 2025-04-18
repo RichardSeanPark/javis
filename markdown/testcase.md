@@ -256,8 +256,15 @@
 - [X] `clear_history` 메서드가 특정 세션 ID의 기록을 완전히 삭제하는지 확인
 - [X] `clear_history` 메서드가 존재하지 않는 세션 ID에 대해 호출될 때 경고를 로깅하는지 확인
 
-## 6. 응답 생성 및 출력 계층 테스트
-- [ ] (구현 예정)
+## 6. 응답 생성 및 출력 계층 테스트 (`src/jarvis/components/response_generator.py`)
+- [X] `ResponseGenerator` 인스턴스가 정상적으로 생성되는지 확인
+- [X] `generate_response` 메서드가 영어(`original_language='en'`) 입력 시 포맷팅된 영어 결과를 그대로 반환하는지 확인
+- [X] `generate_response` 메서드가 비영어(`original_language='ko'`) 입력 시 `translate_text` 함수를 호출하여 번역된 결과를 반환하는지 확인 (Mock `translate_text`)
+- [X] `generate_response` 메서드가 비영어 입력 시 `translate_text` 함수 호출 중 에러가 발생하면 포맷팅된 영어 결과를 대신 반환하는지 확인 (Mock `translate_text`)
+- [X] `generate_response` 메서드가 비문자열(dict, list 등) 입력을 받아 기본적인 문자열로 변환하여 처리하는지 확인
+- [X] `generate_response` 메서드가 빈 문자열이나 None 입력을 받았을 때 기본 메시지("I received an empty response.")를 반환하는지 확인
+- [-] (향후 구현) 결과 포맷팅 로직 테스트 (LLM 호출 등)
+- [-] (향후 구현) Dispatcher 연동 테스트
 
 ## 7. 에이전트 간 상호작용 (A2A) 테스트
 - [ ] (구현 예정)

@@ -171,20 +171,20 @@
 
 ## 6. 응답 생성 및 출력 계층 (`src/jarvis/components/response_generator.py`)
 
-- [ ] **6.1. `ResponseGenerator` 클래스 정의**
-    - [ ] (간단한 경우) 일반 Python 클래스 또는 (복잡한 경우) ADK `Agent`로 정의 가능
-    - [ ] `__init__` 메서드: 번역 툴 인스턴스화 (또는 외부에서 주입받기)
-    - [ ] `generate_response(english_result: Any, original_language: str) -> str` 메서드 정의
-- [ ] **6.2. 결과 처리 및 포맷팅 (`generate_response` 메서드 내)**
-    - [ ] 입력받은 `english_result` (텍스트, JSON 등)를 사용자 친화적 텍스트로 변환/요약 (필요시 LLM 추가 호출)
-- [ ] **6.3. 최종 응답 번역 (`generate_response` 메서드 내)**
-    - [ ] `original_language`가 'en'이 아닌 경우, 포맷팅된 영어 응답 텍스트를 `original_language`로 번역 (번역 툴 호출)
-    - [ ] 번역 시 ISO 639-1 언어 코드 사용 (예: 'ko', 'en', 'ja')
-    - [ ] 번역된 텍스트 또는 원본 영어 텍스트를 최종 반환값으로 설정
-- [ ] **6.4. Dispatcher 연동**: `src/jarvis/core/dispatcher.py` 에서 `ResponseGenerator` 사용
-    - [ ] 하위 에이전트로부터 결과 수신 후, `ResponseGenerator.generate_response()` 호출 (영어 결과와 원본 언어 전달)
-    - [ ] 최종 번역된 응답을 사용자 인터페이스로 반환
-- [ ] **6.5. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .response_generator import ResponseGenerator` 추가
+- [X] **6.1. `ResponseGenerator` 클래스 정의**
+    - [X] (간단한 경우) 일반 Python 클래스 또는 (복잡한 경우) ADK `Agent`로 정의 가능
+    - [X] `__init__` 메서드: 번역 툴 인스턴스화 (또는 외부에서 주입받기)
+    - [X] `generate_response(english_result: Any, original_language: str) -> str` 메서드 정의
+- [X] **6.2. 결과 처리 및 포맷팅 (`generate_response` 메서드 내)**
+    - [-] 입력받은 `english_result` (텍스트, JSON 등)를 사용자 친화적 텍스트로 변환/요약 (필요시 LLM 추가 호출) # 기본 포맷팅만 구현
+- [X] **6.3. 최종 응답 번역 (`generate_response` 메서드 내)**
+    - [X] `original_language`가 'en'이 아닌 경우, 포맷팅된 영어 응답 텍스트를 `original_language`로 번역 (번역 툴 호출)
+    - [X] 번역 시 ISO 639-1 언어 코드 사용 (예: 'ko', 'en', 'ja')
+    - [X] 번역된 텍스트 또는 원본 영어 텍스트를 최종 반환값으로 설정
+- [-] **6.4. Dispatcher 연동**: `src/jarvis/core/dispatcher.py` 에서 `ResponseGenerator` 사용
+    - [-] 하위 에이전트로부터 결과 수신 후, `ResponseGenerator.generate_response()` 호출 (영어 결과와 원본 언어 전달)
+    - [-] 최종 번역된 응답을 사용자 인터페이스로 반환
+- [X] **6.5. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .response_generator import ResponseGenerator` 추가
 
 ## 7. 에이전트 간 상호작용 (A2A 연동 - 심화 단계)
 

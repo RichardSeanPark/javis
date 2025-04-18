@@ -25,6 +25,7 @@ dependencies = [
 
 [project.scripts]
 run-api = "javis.scripts.run_api:main"
+run-agent-hub = "src.jarvis.interfaces.agent_hub.server:app"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

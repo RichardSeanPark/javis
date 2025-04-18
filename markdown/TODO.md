@@ -188,10 +188,10 @@
 
 ## 7. 에이전트 간 상호작용 (A2A 연동 - 심화 단계)
 
-- [ ] **7.1. Agent Hub 서버 구현 (`src/jarvis/interfaces/agent_hub/server.py`)**
-    - [ ] FastAPI 또는 Flask 기반으로 A2A Discovery API 엔드포인트 (`/discover`) 구현
-    - [ ] 에이전트 등록/관리 기능 구현 (인메모리 딕셔너리 또는 간단한 DB 사용)
-    - [ ] Agent Card 저장 및 검색 로직 구현
+- [X] **7.1. Agent Hub 서버 구현 (`src/jarvis/interfaces/agent_hub/server.py`)**
+    - [X] FastAPI 또는 Flask 기반으로 A2A Discovery API 엔드포인트 (`/discover`) 구현
+    - [X] 에이전트 등록/관리 기능 구현 (인메모리 딕셔너리 또는 간단한 DB 사용)
+    - [X] Agent Card 저장 및 검색 로직 구현
 - [ ] **7.2. A2A 통신 라이브러리 설정**: `google-a2a-python` 라이브러리 설치 및 기본 설정
 - [ ] **7.3. ADK 에이전트 A2A 노출**: 각 ADK 에이전트(예: `CodingAgent`)를 A2A 프로토콜로 호출 가능하도록 A2A 서버 래퍼 구현 (라이브러리 활용)
 - [ ] **7.4. Dispatcher A2A 클라이언트 로직**: 

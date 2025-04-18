@@ -267,4 +267,18 @@
 - [-] (향후 구현) Dispatcher 연동 테스트
 
 ## 7. 에이전트 간 상호작용 (A2A) 테스트
-- [ ] (구현 예정)
+
+### 7.1 Agent Hub 서버 테스트 (`src/jarvis/interfaces/agent_hub/server.py`)
+- [ ] FastAPI 앱 인스턴스(`app`)가 정상적으로 생성되는지 확인
+- [ ] 루트 경로(`/`) GET 요청 시 "Jarvis Agent Hub is running." 메시지와 함께 200 응답 반환 확인 (TestClient 사용)
+- [ ] `/register` POST 엔드포인트가 존재하는지 확인 (TestClient 사용, 422 Unprocessable Entity 예상 - body 없이 호출)
+- [ ] 유효한 `AgentCard` 데이터로 `/register` POST 요청 시 201 응답 및 성공 메시지 반환 확인
+- [ ] `/register` 호출 후 `/agents` GET 요청 시 등록된 에이전트 정보가 포함된 리스트 반환 확인
+- [ ] 동일한 `agent_id`로 `/register` 재호출 시 기존 정보 덮어쓰기 확인 (경고 로그 확인은 어려울 수 있음)
+- [ ] `/discover` POST 엔드포인트가 존재하는지 확인 (TestClient 사용, 422 예상)
+- [ ] 유효한 `DiscoveryRequest` (빈 `required_capabilities` 리스트 포함)로 `/discover` POST 요청 시 빈 `discovered_agents` 리스트와 200 응답 반환 확인 (초기 상태)
+- [ ] 에이전트 등록 후 `/discover` POST 요청 시 등록된 에이전트가 포함된 리스트 반환 확인 (현재는 필터링 없이 모두 반환)
+- [-] (향후 구현) `/discover` 요청 시 `required_capabilities` 기반 필터링 로직 테스트
+
+### 7.2 A2A 통신 라이브러리 설정 테스트
+- [-] (구현 예정)

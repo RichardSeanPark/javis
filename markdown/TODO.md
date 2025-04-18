@@ -128,10 +128,10 @@
     - [-] (툴 구현은 5단계에서) 코드 실행기 툴 인터페이스 정의 (`execute_python_code` 함수 시그니처)
     - [X] 모듈 등록: `src/jarvis/agents/__init__.py` 생성 및 `from .coding_agent import CodingAgent` 추가
 *   **4.2. 지식 QA 에이전트 (`src/jarvis/agents/qa_agent.py`)**
-    - [ ] `KnowledgeQA_Agent` 클래스 정의 (ADK `LlmAgent` 상속)
-    - [ ] `__init__` 메서드: `name="KnowledgeQA_Agent"`, `description="Answers general knowledge questions in English. Can use web search for up-to-date information."` 설정. `llm_config` 설정 (예: `gemini-2.0-flash-exp`). 웹 검색 툴 등록.
-    - [ ] `instruction` 필드: 역할, 웹 검색 사용 시점, 답변 형식 등을 영어로 기술 (예: "You are a helpful Q&A assistant. Answer the user's question in English based on your internal knowledge. If the question requires current information or knowledge you don't possess, use the web_search tool. Synthesize the search results into a concise answer. Respond only in English.")
-    - [ ] (툴 구현은 5단계에서) 웹 검색 툴 인터페이스 정의 (`web_search` 함수 시그니처)
+    - [X] `KnowledgeQA_Agent` 클래스 정의 (ADK `LlmAgent` 상속)
+    - [X] `__init__` 메서드: `name="KnowledgeQA_Agent"`, `description="Answers general knowledge questions in English. Can use web search for up-to-date information."`, `model` 설정. 웹 검색 툴 등록 placeholder.
+    - [X] `instruction` 필드: 역할, 웹 검색 사용 시점, 답변 형식 등을 영어로 기술
+    - [-] (툴 구현은 5단계에서) 웹 검색 툴 인터페이스 정의 (`web_search` 함수 시그니처)
     - [ ] 모듈 등록: `src/jarvis/agents/__init__.py`에 `from .qa_agent import KnowledgeQA_Agent` 추가
 *   **4.3. Dispatcher에 초기 에이전트 등록**
     - [ ] `src/jarvis/core/dispatcher.py` 수정:

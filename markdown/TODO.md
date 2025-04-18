@@ -126,7 +126,7 @@
     - [X] `__init__` 메서드: `name="CodingAgent"`, `description="Generates, analyzes, debugs, and optimizes code based on user requests in English."`, `model` 설정. 필요한 툴(코드 실행기 등) 등록 placeholder.
     - [X] `instruction` 필드: 에이전트의 역할, 작동 방식, 출력 형식 등을 영어로 상세히 기술
     - [-] (툴 구현은 5단계에서) 코드 실행기 툴 인터페이스 정의 (`execute_python_code` 함수 시그니처)
-    - [ ] 모듈 등록: `src/jarvis/agents/__init__.py` 생성 및 `from .coding_agent import CodingAgent` 추가
+    - [X] 모듈 등록: `src/jarvis/agents/__init__.py` 생성 및 `from .coding_agent import CodingAgent` 추가
 *   **4.2. 지식 QA 에이전트 (`src/jarvis/agents/qa_agent.py`)**
     - [ ] `KnowledgeQA_Agent` 클래스 정의 (ADK `LlmAgent` 상속)
     - [ ] `__init__` 메서드: `name="KnowledgeQA_Agent"`, `description="Answers general knowledge questions in English. Can use web search for up-to-date information."` 설정. `llm_config` 설정 (예: `gemini-2.0-flash-exp`). 웹 검색 툴 등록.

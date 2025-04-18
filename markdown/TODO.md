@@ -107,15 +107,17 @@
         - [X] **3.3.1. 규칙 기반 라우팅 구현**: `ParsedInput.intent` 또는 `ParsedInput.domain` 기반으로 특정 키를 가진 `self.sub_agents`를 직접 선택하는 조건문 추가 (초기 단계)
         - [X] **3.3.2. ADK 자동 위임 설정**: \
             * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)\n            * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 하위 에이전트에 위임하도록 설정\n            * 디스패처의 `instruction`에 라우팅 가이드라인 추가 (예: \"Route the user\'s request based on the following specialized agents: ...\")\n            * ADK의 자동 위임 기능을 활용하여 LLM이 자연스럽게 적합한 하위 에이전트를 선택하도록 함 (Live API 테스트 포함)
-         - [-] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):\n            *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)\n            *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄\n            *   검색된 A2A 에이전트의 Agent Card를 평가하여 최적의 에이전트 선택
-- [ ] **3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입**
-    - [ ] 선택된 하위 에이전트(ADK) 호출 시, `ParsedInput.english_text`와 필요한 컨텍스트(`original_language`, 대화 이력 등) 전달 로직
-    - [ ] 에이전트에게 허용된 툴 목록 및 설정(API 키 등) 주입 로직 설계 (ADK 방식 활용)
-- [ ] **3.5. 결과 처리 및 반환**
-    - [ ] 하위 에이전트로부터 **영어 결과** 수신
-    - [ ] 최종 응답 생성기로 전달 (또는 Dispatcher가 직접 처리 - 6단계에서 상세화)
-- [ ] **3.6. 에러 핸들링**: 입력 파싱 실패, 라우팅 실패, 하위 에이전트 실행 오류 등에 대한 예외 처리 로직 추가
-- [ ] **3.7. 패키지 루트 노출**: `src/jarvis/__init__.py` 에서 `root_agent = JarvisDispatcher()` 인스턴스 생성 및 노출
+         - [-] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):\n            *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)\n            *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄
+            *   검색된 A2A 에이전트의 Agent Card를 평가하여 최적의 에이전트 선택
+            *   선택된 A2A 에이전트 호출 로직 구현 (A2A 프로토콜 메시지 구성 및 전송)
+- [-] **3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입**
+    - [-] 선택된 하위 에이전트(ADK) 호출 시, `ParsedInput.english_text`와 필요한 컨텍스트(`original_language`, 대화 이력 등) 전달 로직
+    - [-] 에이전트에게 허용된 툴 목록 및 설정(API 키 등) 주입 로직 설계 (ADK 방식 활용)
+- [-] **3.5. 결과 처리 및 반환**
+    - [-] 하위 에이전트로부터 **영어 결과** 수신
+    - [-] 최종 응답 생성기로 전달 (또는 Dispatcher가 직접 처리 - 6단계에서 상세화)
+- [-] **3.6. 에러 핸들링**: 입력 파싱 실패, 라우팅 실패, 하위 에이전트 실행 오류 등에 대한 예외 처리 로직 추가
+- [-] **3.7. 패키지 루트 노출**: `src/jarvis/__init__.py` 에서 `root_agent = JarvisDispatcher()` 인스턴스 생성 및 노출
 
 ## 4. 도메인별 에이전트 모듈 계층 (초기 에이전트 2개 구현)
 

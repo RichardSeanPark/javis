@@ -293,6 +293,21 @@ class JarvisDispatcher(BaseAgent):
         # 4. Return result (delegated agent name or indication of no delegation)
         # In a real scenario, the Runner would use this name to invoke the actual agent.
         # Here, we just return a message indicating the decision.
+
+        # --- Design Note for Step 3.4: Context/Tool Injection by Runner --- #
+        # The actual invocation of the delegated agent (if name != \"NO_AGENT\")
+        # is handled by the ADK Runner outside this `process_request` method.
+        # The Runner would need to:
+        # 1. Get the selected agent instance using the `delegated_agent_name` from self.sub_agents.
+        # 2. Prepare the invocation context for the selected agent:
+        #    - Pass the relevant input, likely `self.current_parsed_input.english_text`.
+        #    - Include necessary context like `self.current_original_language` and potentially conversation history (via SessionService).
+        #    - Inject required tools (e.g., code executor for CodingAgent, web search for QA_Agent).
+        #      Tools might need configuration like API keys, which the Runner or a config manager should provide.
+        #    - The `InvocationContext` object is the standard way to pass this data.
+        # 3. Call the selected agent's `invoke` or `run_async` method with the prepared context.
+        # --- End Design Note ---
+
         if delegated_agent_name != "NO_AGENT":
             return f"Delegating task to agent: {delegated_agent_name}"
         else:

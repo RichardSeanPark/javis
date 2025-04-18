@@ -29,6 +29,10 @@ from typing_extensions import override # 수정된 경로
 from ..agents.coding_agent import CodingAgent
 from ..agents.qa_agent import KnowledgeQA_Agent
 
+# Import available tools and specific tools
+from ..tools import available_tools, translate_tool, web_search_tool, code_execution_tool # Added tool imports
+from google.adk.tools import BaseTool # Import BaseTool for type hinting
+
 logger = logging.getLogger(__name__) # 로거 설정
 
 # .env 파일 로드 (모듈 로드 시점에 한 번 실행)
@@ -70,6 +74,7 @@ class JarvisDispatcher(LlmAgent):
     # response_generator: ResponseGenerator = Field(default_factory=ResponseGenerator) # 주석 처리
     # context_manager: ContextManager = Field(default_factory=ContextManager) # 주석 처리
     llm_clients: Dict[str, Any] = Field(default_factory=dict, exclude=True)
+    agent_tool_map: Dict[str, List[BaseTool]] = Field(default_factory=dict) # Added agent_tool_map
     current_parsed_input: Optional[ParsedInput] = None
     current_original_language: Optional[str] = None
 
@@ -96,7 +101,16 @@ class JarvisDispatcher(LlmAgent):
         # Update instruction after super init if needed
         self.instruction = DEFAULT_INSTRUCTION
 
+        # Define the tool map for agents BEFORE registering them
+        self.agent_tool_map = {
+            "CodingAgent": [code_execution_tool],
+            "KnowledgeQA_Agent": [web_search_tool, translate_tool],
+            # Add other agents and their specific tools here
+        }
+        # logger.info(f"Agent tool map defined: { {k: [t.name for t in v] for k, v in self.agent_tool_map.items()} }") # Log tool names for readability - REMOVED DUE TO INIT ORDER ISSUE
+
         # Register agents after ensuring self.sub_agents exists (due to default_factory)
+        # The tools list for the dispatcher itself now includes agents for delegation decision
         self.register_agent(CodingAgent())
         self.register_agent(KnowledgeQA_Agent())
 
@@ -251,6 +265,29 @@ class JarvisDispatcher(LlmAgent):
             import traceback
             traceback.print_exc() # Print stack trace for debugging
             return "Error: Exception during LLM call for delegation."
+
+        # --- Delegation Logic ---
+        selected_agent = None
+        if delegated_agent_name != "NO_AGENT" and delegated_agent_name in self.sub_agents:
+            selected_agent = self.sub_agents[delegated_agent_name]
+            logger.info(f"Agent '{delegated_agent_name}' selected for delegation.")
+
+            # TODO: Implement Tool Injection Logic Here
+            # 1. Get the specific tools for the selected agent
+            #    agent_specific_tools = self.agent_tool_map.get(delegated_agent_name, [])
+            # 2. Find a way to invoke the 'selected_agent' with ONLY 'agent_specific_tools'.
+            #    This might involve modifying the agent's context, creating a temporary
+            #    wrapper, or potentially enhancing the ADK LlmAgent class if possible.
+            #    For now, the agent will run with all tools it was initialized with.
+            #    Example placeholder:
+            #    result = await selected_agent.run_with_specific_tools(
+            #        query=llm_input_text,
+            #        tools=agent_specific_tools,
+            #        # Pass necessary context like original_language
+            #    )
+
+            # For now, just return a message indicating delegation (actual call is handled by Runner)
+            return f"Delegating task to agent: {delegated_agent_name}. (Tool injection pending implementation)"
 
         # --- 3.3.3: A2A Dynamic Discovery Logic ---
         if delegated_agent_name == "NO_AGENT":

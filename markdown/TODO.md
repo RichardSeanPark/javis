@@ -160,8 +160,9 @@
         - [X] ADK `Tool` 객체 생성 (`description` 자동 설정됨)
     - [X] **툴 모듈 등록 (`src/jarvis/tools/__init__.py`)**: 생성된 `Tool` 객체들 임포트 및 리스트로 관리 (예: `available_tools = [translate_tool, web_search_tool, code_execution_tool]`)
 *   **5.2. 툴 레지스트리 및 주입 로직 (`src/jarvis/core/dispatcher.py`)**
-    - [ ] `src/jarvis/tools` 에서 `available_tools` 임포트
-    - [ ] Dispatcher가 하위 에이전트 호출 시, 해당 에이전트에 필요한 툴만 전달하는 로직 설계 (예: `CodingAgent`에는 `code_execution_tool`만 전달)
+    - [X] `src/jarvis/tools` 에서 `available_tools` 임포트
+    - [X] Dispatcher가 하위 에이전트 호출 시, 해당 에이전트에 필요한 툴만 전달하는 로직 설계 (agent_tool_map 정의)
+    - [-] (향후 구현) 실제 툴 주입 로직 구현
 *   **5.3. 컨텍스트 관리 (`src/jarvis/core/context_manager.py`)**
     - [ ] **클래스 정의**: `ContextManager` 클래스 생성
     - [ ] **대화 이력 관리**: 세션 ID별 대화 이력(사용자 입력, AI 응답, 원본 언어) 저장 및 검색 메서드 구현 (간단한 딕셔너리 또는 Redis 등 활용)

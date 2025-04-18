@@ -199,7 +199,7 @@
 
 ## 5. 툴 및 컨텍스트 관리 계층 테스트
 
-### 5.1. 번역 툴 (`translate_tool`) 테스트
+### 5.2. 번역 툴 (`translate_tool`) 테스트
 - [X] `src/jarvis/tools/translate_tool.py` 파일에 `translate_tool` ADK `Tool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 "translate_tool"인지 확인
     - [X] `description` 속성이 올바른 설명을 포함하는지 확인
@@ -211,7 +211,7 @@
 - [ ] `translate_text` 함수 LLM 호출 오류 시 원본 텍스트 반환 테스트 (Mock): LLM API 호출이 실패하도록 Mocking 했을 때, 함수가 입력된 원본 텍스트를 그대로 반환하는지 확인 # Mock 테스트 미진행
 - [X] `src/jarvis/tools/__init__.py`에 `translate_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
-### 5.2. 웹 검색 툴 (`web_search_tool`) 테스트
+### 5.3. 웹 검색 툴 (`web_search_tool`) 테스트
 - [X] `src/jarvis/tools/web_search_tool.py` 파일에 `web_search_tool` ADK `Tool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 `web_search`인지 확인
     - [X] `description` 속성이 올바른 설명을 포함하는지 확인 (함수 독스트링 확인)
@@ -222,7 +222,7 @@
 - [X] **API 호출 오류 테스트 (Mock)**: `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
 - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
-### 5.3. 코드 실행 툴 (`code_execution_tool`) 테스트
+### 5.4. 코드 실행 툴 (`code_execution_tool`) 테스트
 - [X] `src/jarvis/tools/code_execution_tool.py` 파일에 `code_execution_tool` ADK `FunctionTool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 `execute_python_code`인지 확인
     - [X] `description` 속성이 함수의 독스트링과 일치하는지 확인 (보안 경고 포함)
@@ -236,10 +236,15 @@
 - [-] **보안 테스트 (exec 제한 - 선택적)**: `__import__('os').system('ls')` 와 같이 위험할 수 있는 코드 실행 시 제한되거나 오류가 발생하는지 확인 (현재 구현에서는 실행될 수 있음 - 주의) # Skipped
 - [X] `src/jarvis/tools/__init__.py`에 `code_execution_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
-### 5.4. 툴 레지스트리 및 주입 테스트
-- [-] (구현 예정)
+### 5.5. 툴 레지스트리 및 주입 테스트 (`src/jarvis/core/dispatcher.py`)
+- [X] `JarvisDispatcher.__init__`에서 `src.jarvis.tools`로부터 `available_tools`가 임포트 되는지 확인 (코드 정적 분석 또는 Mock 확인)
+- [X] `JarvisDispatcher.__init__`에서 `agent_tool_map` 딕셔너리가 생성되고 올바른 에이전트-툴 매핑을 포함하는지 확인
+    - [X] `CodingAgent` 키에 `code_execution_tool`이 포함되어 있는지 확인
+    - [X] `KnowledgeQA_Agent` 키에 `web_search_tool`과 `translate_tool`이 포함되어 있는지 확인
+- [X] `JarvisDispatcher.process_request` 내부에 툴 주입 로직을 위한 TODO 주석이 존재하는지 확인 (코드 정적 분석)
+- [-] (향후 구현) 실제 툴 주입 로직 테스트: 특정 에이전트가 호출될 때 해당 에이전트에게 올바른 툴만 전달되는지 확인 (Mock 및 복잡한 설정 필요)
 
-### 5.5. 컨텍스트 관리자 (`ContextManager`) 테스트
+### 5.6. 컨텍스트 관리자 (`ContextManager`) 테스트
 - [-] (구현 예정)
 
 ## 6. 응답 생성 및 출력 계층 테스트

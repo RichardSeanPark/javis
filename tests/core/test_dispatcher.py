@@ -439,5 +439,49 @@ class TestJarvisDispatcherReal:
                 assert final_message == expected_message, \
                     f"Expected final message '{expected_message}', but got '{final_message}'"
 
+# --- Tool Registry and Injection Tests (Step 5.2) ---
+# These tests are now correctly placed outside the class
+
+def test_dispatcher_imports_available_tools(): # No self argument
+    """Dispatcher 모듈이 src.jarvis.tools의 available_tools를 임포트하는지 확인합니다."""
+    # This test is somewhat weak as it relies on static analysis or import success.
+    # A better test might involve mocking the import and checking usage.
+    try:
+        from src.jarvis.tools import available_tools
+        assert available_tools is not None
+    except ImportError:
+        pytest.fail("Could not import available_tools from src.jarvis.tools")
+
+def test_dispatcher_initializes_agent_tool_map(real_dispatcher): # Use real_dispatcher fixture
+    """Dispatcher가 __init__에서 agent_tool_map을 올바르게 초기화하는지 확인합니다."""
+    dispatcher = real_dispatcher # Assign fixture to local variable
+    assert hasattr(dispatcher, "agent_tool_map")
+    assert isinstance(dispatcher.agent_tool_map, dict)
+
+    # Import necessary tools for comparison (avoid importing within the test function itself if possible)
+    from src.jarvis.tools import code_execution_tool, web_search_tool, translate_tool
+
+    # Check CodingAgent mapping
+    assert "CodingAgent" in dispatcher.agent_tool_map
+    assert isinstance(dispatcher.agent_tool_map["CodingAgent"], list)
+    assert code_execution_tool in dispatcher.agent_tool_map["CodingAgent"]
+    # Ensure only the expected tool is present
+    assert len(dispatcher.agent_tool_map["CodingAgent"]) == 1
+
+    # Check KnowledgeQA_Agent mapping
+    assert "KnowledgeQA_Agent" in dispatcher.agent_tool_map
+    assert isinstance(dispatcher.agent_tool_map["KnowledgeQA_Agent"], list)
+    assert web_search_tool in dispatcher.agent_tool_map["KnowledgeQA_Agent"]
+    assert translate_tool in dispatcher.agent_tool_map["KnowledgeQA_Agent"]
+    # Ensure only the expected tools are present
+    assert len(dispatcher.agent_tool_map["KnowledgeQA_Agent"]) == 2
+
+def test_dispatcher_process_request_has_tool_injection_todo(real_dispatcher): # Use real_dispatcher fixture
+    """process_request 메서드에 툴 주입 TODO 주석이 있는지 확인합니다."""
+    dispatcher = real_dispatcher # Assign fixture to local variable
+    import inspect
+    process_request_source = inspect.getsource(dispatcher.process_request)
+    assert "# TODO: Implement Tool Injection Logic Here" in process_request_source
+
     # ... rest of the class ...
  

@@ -164,10 +164,10 @@
     - [X] Dispatcher가 하위 에이전트 호출 시, 해당 에이전트에 필요한 툴만 전달하는 로직 설계 (agent_tool_map 정의)
     - [-] (향후 구현) 실제 툴 주입 로직 구현
 *   **5.3. 컨텍스트 관리 (`src/jarvis/core/context_manager.py`)**
-    - [ ] **클래스 정의**: `ContextManager` 클래스 생성
-    - [ ] **대화 이력 관리**: 세션 ID별 대화 이력(사용자 입력, AI 응답, 원본 언어) 저장 및 검색 메서드 구현 (간단한 딕셔너리 또는 Redis 등 활용)
-    - [ ] **컨텍스트 제공**: 특정 세션 ID에 대한 컨텍스트(최근 N개 대화, 원본 언어 등)를 포맷하여 반환하는 메서드 구현
-    - [ ] **Dispatcher 연동**: Dispatcher에서 `ContextManager` 인스턴스 사용. 에이전트 호출 전 필요한 컨텍스트 검색 및 전달 로직 추가.
+    - [X] **클래스 정의**: `ContextManager` 클래스 생성
+    - [X] **대화 이력 관리**: 세션 ID별 대화 이력(사용자 입력, AI 응답, 원본 언어) 저장 및 검색 메서드 구현 (간단한 딕셔너리 또는 Redis 등 활용)
+    - [X] **컨텍스트 제공**: 특정 세션 ID에 대한 컨텍스트(최근 N개 대화, 원본 언어 등)를 포맷하여 반환하는 메서드 구현
+    - [-] **Dispatcher 연동**: Dispatcher에서 `ContextManager` 인스턴스 사용. 에이전트 호출 전 필요한 컨텍스트 검색 및 전달 로직 추가.
 
 ## 6. 응답 생성 및 출력 계층 (`src/jarvis/components/response_generator.py`)
 

@@ -244,8 +244,17 @@
 - [X] `JarvisDispatcher.process_request` 내부에 툴 주입 로직을 위한 TODO 주석이 존재하는지 확인 (코드 정적 분석)
 - [-] (향후 구현) 실제 툴 주입 로직 테스트: 특정 에이전트가 호출될 때 해당 에이전트에게 올바른 툴만 전달되는지 확인 (Mock 및 복잡한 설정 필요)
 
-### 5.6. 컨텍스트 관리자 (`ContextManager`) 테스트
-- [-] (구현 예정)
+### 5.6. 컨텍스트 관리자 (`ContextManager`) 테스트 (`src/jarvis/core/context_manager.py`)
+- [X] `ContextManager` 인스턴스가 정상적으로 생성되는지 확인 (`session_histories`가 빈 `defaultdict`인지 확인)
+- [X] `add_message` 메서드가 세션 ID별로 메시지(user, ai, lang) 튜플을 `session_histories` deque에 올바르게 추가하는지 확인
+- [X] `add_message` 메서드가 `session_id` 없이 호출될 때 메시지를 추가하지 않고 에러를 로깅하는지 확인
+- [X] `get_formatted_context` 메서드가 지정된 세션의 최근 N개 대화 기록을 "User: ...\nAI: ..." 형식의 문자열로 올바르게 반환하는지 확인 (`max_history` 파라미터 존중)
+- [X] `get_formatted_context` 메서드가 `max_history`보다 적은 기록을 가진 세션에 대해 사용 가능한 모든 기록을 반환하는지 확인
+- [X] `get_formatted_context` 메서드가 기록이 없는 세션 ID에 대해 빈 문자열을 반환하는지 확인
+- [X] `get_formatted_context` 메서드가 존재하지 않는 세션 ID에 대해 빈 문자열을 반환하고 경고를 로깅하는지 확인
+- [X] `add_message` 호출 시 deque의 `maxlen`을 초과하면 가장 오래된 메시지가 자동으로 삭제되는지 확인
+- [X] `clear_history` 메서드가 특정 세션 ID의 기록을 완전히 삭제하는지 확인
+- [X] `clear_history` 메서드가 존재하지 않는 세션 ID에 대해 호출될 때 경고를 로깅하는지 확인
 
 ## 6. 응답 생성 및 출력 계층 테스트
 - [ ] (구현 예정)

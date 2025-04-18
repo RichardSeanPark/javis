@@ -148,11 +148,11 @@
         - [X] 함수 내부에 LLM 호출 로직 구현 (번역용 프롬프트 사용, 예: `"Translate the following text from {source_language} to {target_language}: {text}"`)
         - [X] ADK `Tool` 객체 생성 (`function_declarations`에 함수 정보 명시, `description` 포함)
         - [X] `source_language`와 `target_language` 파라미터는 ISO 639-1 언어 코드 사용 (예: 'ko', 'en', 'ja')
-    - [ ] **웹 검색 툴 (`src/jarvis/tools/web_search_tool.py`)**
-        - [ ] `web_search(query: str) -> str` 함수 정의
-        - [ ] 외부 검색 API (예: Google Custom Search API, Tavily API 등) 호출 로직 구현
-        - [ ] 검색 결과 요약 또는 가공 로직 (필요시 LLM 추가 호출)
-        - [ ] ADK `Tool` 객체 생성 (`description`: "Searches the web for the given query and returns relevant information.")
+    - [X] **웹 검색 툴 (`src/jarvis/tools/web_search_tool.py`)**
+        - [X] `web_search(query: str) -> str` 함수 정의
+        - [X] 외부 검색 API (예: Google Custom Search API, Tavily API 등) 호출 로직 구현 (duckduckgo_search 사용)
+        - [-] 검색 결과 요약 또는 가공 로직 (필요시 LLM 추가 호출) # LLM 요약 기능 미구현
+        - [X] ADK `Tool` 객체 생성 (`description` 자동 설정됨)
     - [ ] **코드 실행 툴 (`src/jarvis/tools/code_execution_tool.py`)**
         - [ ] `execute_python_code(code: str) -> str` 함수 정의
         - [ ] **보안 중요**: 코드를 안전한 샌드박스 환경(예: `docker` 컨테이너 실행, `restrictedpython`, `exec` 사용 시 매우 주의)에서 실행하는 로직 구현

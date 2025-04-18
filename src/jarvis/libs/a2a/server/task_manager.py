@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Union, AsyncIterable, List
-from common.types import Task
-from common.types import (
+from .. import models as a2a_models
+from ..models import (
     JSONRPCResponse,
     TaskIdParams,
     TaskQueryParams,
@@ -31,7 +31,7 @@ from common.types import (
     TaskPushNotificationConfig,
     InternalError,
 )
-from common.server.utils import new_not_implemented_error
+from .utils import new_not_implemented_error
 import asyncio
 import logging
 
@@ -77,7 +77,7 @@ class TaskManager(ABC):
 
 class InMemoryTaskManager(TaskManager):
     def __init__(self):
-        self.tasks: dict[str, Task] = {}
+        self.tasks: dict[str, a2a_models.Task] = {}
         self.push_notification_infos: dict[str, PushNotificationConfig] = {}
         self.lock = asyncio.Lock()
         self.task_sse_subscribers: dict[str, List[asyncio.Queue]] = {}
@@ -90,7 +90,7 @@ class InMemoryTaskManager(TaskManager):
         async with self.lock:
             task = self.tasks.get(task_query_params.id)
             if task is None:
-                return GetTaskResponse(id=request.id, error=TaskNotFoundError())
+                return GetTaskResponse(id=request.id, error=a2a_models.TaskNotFoundError())
 
             task_result = self.append_task_history(
                 task, task_query_params.historyLength
@@ -105,9 +105,9 @@ class InMemoryTaskManager(TaskManager):
         async with self.lock:
             task = self.tasks.get(task_id_params.id)
             if task is None:
-                return CancelTaskResponse(id=request.id, error=TaskNotFoundError())
+                return CancelTaskResponse(id=request.id, error=a2a_models.TaskNotFoundError())
 
-        return CancelTaskResponse(id=request.id, error=TaskNotCancelableError())
+        return CancelTaskResponse(id=request.id, error=a2a_models.TaskNotCancelableError())
 
     @abstractmethod
     async def on_send_task(self, request: SendTaskRequest) -> SendTaskResponse:
@@ -156,7 +156,7 @@ class InMemoryTaskManager(TaskManager):
             logger.error(f"Error while setting push notification info: {e}")
             return JSONRPCResponse(
                 id=request.id,
-                error=InternalError(
+                error=a2a_models.InternalError(
                     message="An error occurred while setting push notification info"
                 ),
             )
@@ -175,23 +175,23 @@ class InMemoryTaskManager(TaskManager):
             logger.error(f"Error while getting push notification info: {e}")
             return GetTaskPushNotificationResponse(
                 id=request.id,
-                error=InternalError(
+                error=a2a_models.InternalError(
                     message="An error occurred while getting push notification info"
                 ),
             )
         
-        return GetTaskPushNotificationResponse(id=request.id, result=TaskPushNotificationConfig(id=task_params.id, pushNotificationConfig=notification_info))
+        return GetTaskPushNotificationResponse(id=request.id, result=a2a_models.TaskPushNotificationConfig(id=task_params.id, pushNotificationConfig=notification_info))
 
-    async def upsert_task(self, task_send_params: TaskSendParams) -> Task:
+    async def upsert_task(self, task_send_params: TaskSendParams) -> a2a_models.Task:
         logger.info(f"Upserting task {task_send_params.id}")
         async with self.lock:
             task = self.tasks.get(task_send_params.id)
             if task is None:
-                task = Task(
+                task = a2a_models.Task(
                     id=task_send_params.id,
                     sessionId = task_send_params.sessionId,
                     messages=[task_send_params.message],
-                    status=TaskStatus(state=TaskState.SUBMITTED),
+                    status=a2a_models.TaskStatus(state=a2a_models.TaskState.SUBMITTED),
                     history=[task_send_params.message],
                 )
                 self.tasks[task_send_params.id] = task
@@ -207,7 +207,7 @@ class InMemoryTaskManager(TaskManager):
 
     async def update_store(
         self, task_id: str, status: TaskStatus, artifacts: list[Artifact]
-    ) -> Task:
+    ) -> a2a_models.Task:
         async with self.lock:
             try:
                 task = self.tasks[task_id]
@@ -227,7 +227,7 @@ class InMemoryTaskManager(TaskManager):
 
             return task
 
-    def append_task_history(self, task: Task, historyLength: int | None):
+    def append_task_history(self, task: a2a_models.Task, historyLength: int | None):
         new_task = task.model_copy()
         if historyLength is not None and historyLength > 0:
             new_task.history = new_task.history[-historyLength:]

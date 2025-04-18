@@ -2,7 +2,8 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 from starlette.requests import Request
-from common.types import (
+from .. import models as a2a_models
+from ..models import (
     A2ARequest,
     JSONRPCResponse,
     InvalidRequestError,
@@ -20,7 +21,7 @@ from common.types import (
 from pydantic import ValidationError
 import json
 from typing import AsyncIterable, Any
-from common.server.task_manager import TaskManager
+from .task_manager import TaskManager
 
 import logging
 
@@ -33,7 +34,7 @@ class A2AServer:
         host="0.0.0.0",
         port=5000,
         endpoint="/",
-        agent_card: AgentCard = None,
+        agent_card: a2a_models.AgentCard = None,
         task_manager: TaskManager = None,
     ):
         self.host = host
@@ -64,23 +65,23 @@ class A2AServer:
     async def _process_request(self, request: Request):
         try:
             body = await request.json()
-            json_rpc_request = A2ARequest.validate_python(body)
+            json_rpc_request = a2a_models.A2ARequest.validate_python(body)
 
-            if isinstance(json_rpc_request, GetTaskRequest):
+            if isinstance(json_rpc_request, a2a_models.GetTaskRequest):
                 result = await self.task_manager.on_get_task(json_rpc_request)
-            elif isinstance(json_rpc_request, SendTaskRequest):
+            elif isinstance(json_rpc_request, a2a_models.SendTaskRequest):
                 result = await self.task_manager.on_send_task(json_rpc_request)
-            elif isinstance(json_rpc_request, SendTaskStreamingRequest):
+            elif isinstance(json_rpc_request, a2a_models.SendTaskStreamingRequest):
                 result = await self.task_manager.on_send_task_subscribe(
                     json_rpc_request
                 )
-            elif isinstance(json_rpc_request, CancelTaskRequest):
+            elif isinstance(json_rpc_request, a2a_models.CancelTaskRequest):
                 result = await self.task_manager.on_cancel_task(json_rpc_request)
-            elif isinstance(json_rpc_request, SetTaskPushNotificationRequest):
+            elif isinstance(json_rpc_request, a2a_models.SetTaskPushNotificationRequest):
                 result = await self.task_manager.on_set_task_push_notification(json_rpc_request)
-            elif isinstance(json_rpc_request, GetTaskPushNotificationRequest):
+            elif isinstance(json_rpc_request, a2a_models.GetTaskPushNotificationRequest):
                 result = await self.task_manager.on_get_task_push_notification(json_rpc_request)
-            elif isinstance(json_rpc_request, TaskResubscriptionRequest):
+            elif isinstance(json_rpc_request, a2a_models.TaskResubscriptionRequest):
                 result = await self.task_manager.on_resubscribe_to_task(
                     json_rpc_request
                 )
@@ -95,14 +96,14 @@ class A2AServer:
 
     def _handle_exception(self, e: Exception) -> JSONResponse:
         if isinstance(e, json.decoder.JSONDecodeError):
-            json_rpc_error = JSONParseError()
+            json_rpc_error = a2a_models.JSONParseError()
         elif isinstance(e, ValidationError):
-            json_rpc_error = InvalidRequestError(data=json.loads(e.json()))
+            json_rpc_error = a2a_models.InvalidRequestError(data=json.loads(e.json()))
         else:
             logger.error(f"Unhandled exception: {e}")
-            json_rpc_error = InternalError()
+            json_rpc_error = a2a_models.InternalError()
 
-        response = JSONRPCResponse(id=None, error=json_rpc_error)
+        response = a2a_models.JSONRPCResponse(id=None, error=json_rpc_error)
         return JSONResponse(response.model_dump(exclude_none=True), status_code=400)
 
     def _create_response(self, result: Any) -> JSONResponse | EventSourceResponse:
@@ -113,7 +114,7 @@ class A2AServer:
                     yield {"data": item.model_dump_json(exclude_none=True)}
 
             return EventSourceResponse(event_generator(result))
-        elif isinstance(result, JSONRPCResponse):
+        elif isinstance(result, a2a_models.JSONRPCResponse):
             return JSONResponse(result.model_dump(exclude_none=True))
         else:
             logger.error(f"Unexpected result type: {type(result)}")

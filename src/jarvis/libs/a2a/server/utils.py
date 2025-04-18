@@ -1,4 +1,5 @@
-from common.types import (
+from .. import models as a2a_models
+from ..models import (
     JSONRPCResponse,
     ContentTypeNotSupportedError,
     UnsupportedOperationError,
@@ -21,8 +22,8 @@ def are_modalities_compatible(
 
 
 def new_incompatible_types_error(request_id):
-    return JSONRPCResponse(id=request_id, error=ContentTypeNotSupportedError())
+    return a2a_models.JSONRPCResponse(id=request_id, error=a2a_models.ContentTypeNotSupportedError())
 
 
 def new_not_implemented_error(request_id):
-    return JSONRPCResponse(id=request_id, error=UnsupportedOperationError())
+    return a2a_models.JSONRPCResponse(id=request_id, error=a2a_models.UnsupportedOperationError())

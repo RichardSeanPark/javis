@@ -282,3 +282,23 @@
 
 ### 7.2 A2A 통신 라이브러리 설정 테스트
 - [-] (구현 예정)
+
+### 7.3. ADK 에이전트 A2A 노출 테스트 (`src/jarvis/interfaces/a2a_adapter/adk_agent_a2a_server.py`)
+*   **Wrapper 인스턴스 생성 테스트**
+    *   [X] 유효한 ADK `Agent` 인스턴스와 `AgentCard`로 `AdkAgentA2AWrapper` 생성 시 성공 확인
+    *   [X] ADK `Agent`가 아닌 객체로 생성 시 `TypeError` 발생 확인
+    *   [X] 생성된 인스턴스의 `adk_agent` 및 `agent_card` 속성이 올바르게 설정되었는지 확인
+*   **`handle_task` 메서드 테스트 (Mock ADK Agent)**
+    *   [X] Mock ADK Agent의 `__call__` 메서드가 비동기 함수일 때, 유효한 텍스트 Task 입력 시 `await adk_agent()`가 호출되는지 확인 (AsyncMock 사용)
+    *   [X] Mock ADK Agent의 `__call__` 메서드가 동기 함수일 때, 유효한 텍스트 Task 입력 시 `asyncio.to_thread(adk_agent, ...)` 또는 유사한 방식으로 호출되는지 확인 (Mock 사용, 필요시)
+    *   [X] `adk_agent` 호출 성공 시 (Mock 반환값 설정), 반환된 `Task`의 `status.state`가 `COMPLETED`이고 `artifacts`에 Mock 응답 텍스트가 포함된 `TextPart`가 있는지 확인
+    *   [X] `adk_agent` 호출 시 예외 발생하도록 Mocking했을 때, 반환된 `Task`의 `status.state`가 `FAILED`이고 `status.error` 속성이 없는지 확인 (또는 None)
+    *   [X] Task 메시지에 `TextPart`가 없을 때 경고 로그가 기록되고 `adk_agent`가 빈 문자열 또는 기본값으로 호출되는지 확인 (Mock 확인)
+    *   [X] 입력 Task에 `history` 자체가 없거나 비어있을 때 경고 로그가 기록되고 `adk_agent`가 빈 문자열 또는 기본값으로 호출되는지 확인 (Mock 확인)
+*   **`handle_task` 메서드 테스트 (Live ADK Agent - 선택적, 복잡성 높음)**
+    *   [-] 실제 `CodingAgent` 인스턴스를 래핑하고, 간단한 코드 생성 요청 Task 전송 시 예상되는 코드 결과가 `artifacts`에 포함되어 반환되는지 확인 (Skip - Live 테스트는 현재 범위 아님)
+*   **FastAPI 연동 및 엔드포인트 테스트 (Placeholder/향후)**
+    *   [-] (A2AServer 베이스 클래스 또는 직접 구현에 따라) A2A 서버가 특정 경로(예: `/a2a`)의 POST 요청을 처리하도록 설정되었는지 확인
+    *   [-] 유효한 JSON-RPC `tasks/send` 요청 전송 시 200 응답과 함께 `handle_task`에서 반환된 Task 객체(JSON 직렬화된 형태)를 받는지 확인 (FastAPI TestClient 사용)
+    *   [-] 잘못된 JSON-RPC 형식의 요청 전송 시 적절한 JSON-RPC 오류 응답(예: `invalid request`, `method not found`)을 받는지 확인
+- [ ] **7.4. Dispatcher A2A 클라이언트 로직**: 

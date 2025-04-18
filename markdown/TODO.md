@@ -134,11 +134,11 @@
     - [-] (툴 구현은 5단계에서) 웹 검색 툴 인터페이스 정의 (`web_search` 함수 시그니처)
     - [X] 모듈 등록: `src/jarvis/agents/__init__.py`에 `from .qa_agent import KnowledgeQA_Agent` 추가
 *   **4.3. Dispatcher에 초기 에이전트 등록**
-    - [ ] `src/jarvis/core/dispatcher.py` 수정:
-        *   `CodingAgent`와 `KnowledgeQA_Agent` 임포트
-        *   `JarvisDispatcher.__init__` 내에서 두 에이전트 인스턴스 생성
-        *   `register_agent` 메서드 호출 또는 `sub_agents` 리스트/딕셔너리에 추가
-        *   Dispatcher의 `tools` 속성 또는 `sub_agents` 파라미터에 이 에이전트들을 포함시켜 자동 위임 준비
+    - [X] `src/jarvis/core/dispatcher.py` 수정:
+        *   [X] `CodingAgent`와 `KnowledgeQA_Agent` 임포트
+        *   [X] `JarvisDispatcher.__init__` 내에서 두 에이전트 인스턴스 생성
+        *   [X] `register_agent` 메서드 호출 또는 `sub_agents` 리스트/딕셔너리에 추가
+        *   [X] Dispatcher의 `tools` 속성 또는 `sub_agents` 파라미터에 이 에이전트들을 포함시켜 자동 위임 준비
 
 ## 5. 툴 및 컨텍스트 관리 계층
 

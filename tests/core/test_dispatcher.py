@@ -1,6 +1,7 @@
 import pytest
 import inspect # inspect 모듈 임포트
 import asyncio # 비동기 테스트를 위해 추가
+from unittest.mock import patch, MagicMock, AsyncMock # <<< Added for mocking LLM call
 # Mock 사용 금지 - from unittest.mock import AsyncMock, MagicMock, patch
 import dotenv # For loading .env
 import uuid # For session IDs
@@ -44,15 +45,14 @@ def load_env_and_check_key():
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key:
         API_KEY_LOADED = True
-        # Configure API key for google.generativeai if necessary (might still be picked up automatically)
+        # Configure API key for google.genai if necessary
         try:
-            # This might not be needed if the lib picks it up, but doesn't hurt
             genai.configure(api_key=api_key)
-            print("[Test Setup] Attempted to configure google.generativeai with API key.")
+            print("[Test Setup] Attempted to configure google.genai with API key.")
         except AttributeError:
-             print("[Test Setup] google.generativeai.configure does not exist (expected for version 0.8.5). Relying on automatic pickup.")
+             print("[Test Setup] google.genai.configure does not exist. Relying on automatic pickup.")
         except Exception as e:
-            print(f"[Test Setup Warning] Error configuring google.generativeai: {e}")
+            print(f"[Test Setup Warning] Error configuring google.genai: {e}")
     else:
         API_KEY_LOADED = False
         print("[Test Setup Warning] GEMINI_API_KEY not found in environment variables. Real API call tests will likely fail.")
@@ -334,9 +334,90 @@ class TestJarvisDispatcherReal:
                  # Only CodingAgent is registered
             ],
             # Expect the dispatcher's final response to indicate inability to delegate
-            # The exact phrasing depends on the LLM and the dispatcher's instruction.
-            # We check for keywords.
-            # 수정: 실제 반환되는 메시지("No suitable agent found...")에 맞게 기대값 수정
-            expect_no_delegation_reason="suitable agent found" # Check for "No suitable agent found..." substring
+            # Update the expected reason based on the actual message
+            expect_no_delegation_reason="No suitable internal or external agent found" # Check for the beginning of the actual message
         )
+
+    # --- Tests for A2A Placeholder ---
+
+    @pytest.mark.asyncio
+    async def test_a2a_placeholder_entry_on_no_agent_mocked(self, real_dispatcher, caplog):
+        """
+        ### 3.3.3 Test Case: A2A 플레이스홀더 진입 테스트 (Mock)
+        디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고,
+        process_request 실행 시 A2A 플레이스홀더 블록 내의 로그가 출력되는지 확인.
+        """
+        # Set log level to capture info messages
+        caplog.set_level(logging.INFO)
+        dispatcher = real_dispatcher
+
+        # Mock the InputParserAgent to return a predictable ParsedInput
+        mock_parsed_input = ParsedInput(
+            original_text="Some ambiguous request",
+            original_language="en",
+            english_text="Some ambiguous request",
+            intent=None, entities=None, domain=None
+        )
+        # Use patch with the full class path instead of patch.object
+        with patch('src.jarvis.components.input_parser.InputParserAgent.process_input', new_callable=AsyncMock, return_value=mock_parsed_input):
+            # --- Corrected Mocking ---
+            mock_llm_client_instance = MagicMock(spec=genai.Client) # Use MagicMock for easier attribute setting
+            mock_aio_attr = AsyncMock()
+            mock_models_attr = AsyncMock()
+            mock_generate_content_method = AsyncMock(return_value=AsyncMock(text="NO_AGENT")) # Mock the response object directly
+
+            mock_models_attr.generate_content = mock_generate_content_method
+            mock_aio_attr.models = mock_models_attr
+            mock_llm_client_instance.aio = mock_aio_attr
+            # --- End Corrected Mocking ---
+
+            # Use patch with the full class path for get_llm_client
+            with patch('src.jarvis.core.dispatcher.JarvisDispatcher.get_llm_client', return_value=mock_llm_client_instance) as mock_get_client:
+                await dispatcher.process_request("Some ambiguous request")
+                # Assertions
+                mock_get_client.assert_called_once_with(dispatcher.model)
+                mock_generate_content_method.assert_called_once() # Assert on the final mocked method
+                assert "No suitable internal agent found. Checking A2A Hub (Placeholder)." in caplog.text, \
+                    "Log message for A2A placeholder check not found."
+
+    @pytest.mark.asyncio
+    async def test_a2a_placeholder_return_message_mocked(self, real_dispatcher):
+        """
+        ### 3.3.3 Test Case: A2A 플레이스홀더 후 반환 메시지 테스트 (Mock)
+        디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고,
+        process_request가 최종적으로 올바른 메시지를 반환하는지 확인.
+        """
+        dispatcher = real_dispatcher
+
+        # Mock the InputParserAgent
+        mock_parsed_input = ParsedInput(
+            original_text="Another ambiguous request",
+            original_language="en",
+            english_text="Another ambiguous request",
+            intent=None, entities=None, domain=None
+        )
+        # Use patch with the full class path instead of patch.object
+        with patch('src.jarvis.components.input_parser.InputParserAgent.process_input', new_callable=AsyncMock, return_value=mock_parsed_input):
+             # --- Corrected Mocking ---
+            mock_llm_client_instance = MagicMock(spec=genai.Client)
+            mock_aio_attr = AsyncMock()
+            mock_models_attr = AsyncMock()
+            mock_generate_content_method = AsyncMock(return_value=AsyncMock(text="NO_AGENT"))
+
+            mock_models_attr.generate_content = mock_generate_content_method
+            mock_aio_attr.models = mock_models_attr
+            mock_llm_client_instance.aio = mock_aio_attr
+            # --- End Corrected Mocking ---
+
+            # Use patch with the full class path for get_llm_client
+            with patch('src.jarvis.core.dispatcher.JarvisDispatcher.get_llm_client', return_value=mock_llm_client_instance) as mock_get_client:
+                final_message = await dispatcher.process_request("Another ambiguous request")
+                # Assertions
+                mock_get_client.assert_called_once_with(dispatcher.model)
+                mock_generate_content_method.assert_called_once()
+                expected_message = "No suitable internal or external agent found to handle the request."
+                assert final_message == expected_message, \
+                    f"Expected final message '{expected_message}', but got '{final_message}'"
+
+    # ... rest of the class ...
  

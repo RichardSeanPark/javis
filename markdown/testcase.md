@@ -192,4 +192,7 @@
 - [-] **웹 검색 툴 사용 테스트 (Live API)**: (툴 구현 후) 최신 정보가 필요한 질문 시, 웹 검색 툴을 사용하여 답변을 생성하는지 확인 (Live API, 선택적)
 
 ### 4.3. Dispatcher에 에이전트 등록 테스트
-- [-] (구현 예정)
+- [X] `JarvisDispatcher.__init__` 호출 시 `CodingAgent`가 `sub_agents` 딕셔너리에 `\"CodingAgent\"` 키로 등록되는지 확인
+- [X] `JarvisDispatcher.__init__` 호출 시 `CodingAgent`가 `tools` 리스트에 추가되는지 확인 (`CodingAgent` 인스턴스 포함 여부 검증)
+- [X] `JarvisDispatcher.__init__` 호출 시 `KnowledgeQA_Agent`가 `sub_agents` 딕셔너리에 `\"KnowledgeQA_Agent\"` 키로 등록되는지 확인
+- [X] `JarvisDispatcher.__init__` 호출 시 `KnowledgeQA_Agent`가 `tools` 리스트에 추가되는지 확인 (`KnowledgeQA_Agent` 인스턴스 포함 여부 검증)

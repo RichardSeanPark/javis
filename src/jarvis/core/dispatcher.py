@@ -23,6 +23,10 @@ from google.genai.types import Content, Part # ADK 코드와 일치하는 google
 # from typing import AsyncGenerator # typing 모듈에서 가져옴 (이미 위에서 임포트)
 from typing_extensions import override # 수정된 경로
 
+# Import the agents to be registered
+from ..agents.coding_agent import CodingAgent
+from ..agents.qa_agent import KnowledgeQA_Agent
+
 logger = logging.getLogger(__name__) # 로거 설정
 
 # .env 파일 로드 (모듈 로드 시점에 한 번 실행)
@@ -102,8 +106,16 @@ class JarvisDispatcher(BaseAgent):
         if not hasattr(self, 'tools') or self.tools is None:
              self.tools = []
 
-        # 디스패처 자신의 모델에 대한 LLM 클라이언트 초기화 시도 (이름 변경 반영)
+        # 디스패처 자신의 모델에 대한 LLM 클라이언트 초기화 시도
         self._initialize_llm_client(self.model)
+
+        # --- Register initial agents --- #
+        # Create instances and register them
+        coding_agent_instance = CodingAgent()
+        qa_agent_instance = KnowledgeQA_Agent()
+        self.register_agent(coding_agent_instance)
+        self.register_agent(qa_agent_instance)
+        # --- Agent registration complete --- #
 
         # --- Init Log ---
         logger.info(f"Initialized JarvisDispatcher (as BaseAgent).")

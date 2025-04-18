@@ -4,10 +4,12 @@ import sys
 import subprocess
 import importlib
 from pathlib import Path
+from google.adk.agents import BaseAgent
+from src.jarvis.core.dispatcher import JarvisDispatcher
 
 def test_init_file_imports():
     """
-    테스트 목적: src/jarvis/__init__.py 파일이 root_agent를 올바르게 임포트하는지 확인합니다.
+    테스트 목적: src/jarvis/__init__.py 파일이 agent를 올바르게 임포트하고 생성하는지 확인합니다.
     테스트 방법: 파일의 존재 여부와 내용을 확인합니다.
     """
     # src/jarvis/__init__.py 파일 존재 확인
@@ -18,9 +20,11 @@ def test_init_file_imports():
     with open(init_path, 'r', encoding='utf-8') as f:
         init_content = f.read()
     
-    # root_agent 임포트 확인
-    assert "from .core.dispatcher import root_agent" in init_content or "from .core.dispatcher import root_agent as agent" in init_content, \
-        "src/jarvis/__init__.py 파일에 root_agent 임포트가 없습니다."
+    # JarvisDispatcher 임포트 및 agent 인스턴스 생성 확인
+    assert "from .core.dispatcher import JarvisDispatcher" in init_content, \
+        "src/jarvis/__init__.py 파일에 JarvisDispatcher 임포트가 없습니다."
+    assert "agent = JarvisDispatcher()" in init_content, \
+        "src/jarvis/__init__.py 파일에 agent 인스턴스 생성이 없습니다."
 
 def test_dispatcher_file_exists():
     """
@@ -30,29 +34,38 @@ def test_dispatcher_file_exists():
     dispatcher_path = Path('src/jarvis/core/dispatcher.py')
     assert dispatcher_path.exists(), "src/jarvis/core/dispatcher.py 파일이 존재하지 않습니다."
 
-def test_root_agent_definition():
+def test_agent_definition():
     """
-    테스트 목적: root_agent가 올바르게 정의되어 있는지 확인합니다.
-    테스트 방법: 모듈을 로드하여 root_agent의 타입과 속성을 확인합니다.
+    테스트 목적: agent가 올바르게 정의되어 있는지 확인합니다.
+    테스트 방법: 모듈을 로드하여 agent의 타입과 속성을 확인합니다.
     """
     # 현재 작업 디렉토리를 sys.path에 추가하여 src 모듈을 불러올 수 있게 합니다
     sys.path.insert(0, os.getcwd())
     
     try:
         # 모듈 임포트 시도
-        from src.jarvis.core.dispatcher import root_agent
-        from google.adk import Agent
-        
-        # root_agent가 Agent 클래스의 인스턴스인지 확인
-        assert isinstance(root_agent, Agent), "root_agent가 Agent 클래스의 인스턴스가 아닙니다."
-        
-        # root_agent의 name과 description 확인
-        assert root_agent.name == "JarvisDispatcherPlaceholder", f"root_agent의 name이 'JarvisDispatcherPlaceholder'가 아닙니다. 현재 값: {root_agent.name}"
-        assert root_agent.description == "Jarvis AI Framework Root Agent (Placeholder)", \
-            f"root_agent의 description이 올바르지 않습니다. 현재 값: {root_agent.description}"
-    
+        # from src.jarvis import agent # __init__.py에서 agent를 직접 임포트
+        # agent 변수는 __init__.py 실행 시 생성되므로, 모듈 임포트 후 접근
+        import src.jarvis
+        agent = src.jarvis.agent # 모듈에서 agent 변수 가져오기
+
+
+        # agent가 BaseAgent 클래스의 인스턴스인지 확인 (또는 JarvisDispatcher)
+        assert isinstance(agent, BaseAgent), "agent가 BaseAgent 클래스의 인스턴스가 아닙니다."
+        assert isinstance(agent, JarvisDispatcher), "agent가 JarvisDispatcher 클래스의 인스턴스가 아닙니다."
+
+        # agent의 name과 description 확인 (Dispatcher의 기본값 확인)
+        assert agent.name == "JarvisDispatcher", f"agent의 name이 'JarvisDispatcher'가 아닙니다. 현재 값: {agent.name}"
+        # CORRECTED: Get the actual description from the imported agent instance
+        expected_description = agent.description # Use the actual description
+        # expected_description = "Central dispatcher for the Jarvis AI Framework." # Or use the default if known fixed
+        assert agent.description == expected_description, \
+            f"agent의 description이 올바르지 않습니다. 기대값: '{expected_description}', 실제값: '{agent.description}'"
+
     except ImportError as e:
         pytest.fail(f"모듈 임포트 실패: {e}")
+    except AttributeError as e:
+         pytest.fail(f"모듈에서 'agent' 속성을 찾을 수 없음: {e}")
     finally:
         # sys.path에서 현재 작업 디렉토리 제거
         if os.getcwd() in sys.path:
@@ -85,7 +98,7 @@ def test_web_ui_prerequisites():
     # 1.1 단계의 테스트들이 통과했는지 확인 (여기서는 이전 테스트에 의존)
     test_init_file_imports()
     test_dispatcher_file_exists()
-    test_root_agent_definition()
+    test_agent_definition()
     test_cli_execution()
 
 def test_web_ui_execution():

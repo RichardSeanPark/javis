@@ -5,6 +5,8 @@
 from google.adk.agents import LlmAgent, BaseAgent as Agent
 # from google.adk.models import LlmConfig # 더 이상 사용되지 않음
 from ..components.input_parser import InputParserAgent
+# from ..components.response_generator import ResponseGenerator # Import ResponseGenerator - 주석 처리
+# from ..core.context_manager import ContextManager # Import ContextManager - 주석 처리
 from pydantic import Field # Field 임포트 추가
 from ..models.input import ParsedInput # ParsedInput 임포트 추가
 from typing import Optional, List, Dict, Any, AsyncGenerator # Import List, Any, AsyncGenerator
@@ -56,69 +58,53 @@ DEFAULT_INSTRUCTION = (
     # Tool descriptions will be appended dynamically
 )
 
-class JarvisDispatcher(BaseAgent):
+class JarvisDispatcher(LlmAgent):
     """
-    Jarvis AI 프레임워크의 중앙 디스패처.
-    요청을 분석하고 적절한 전문 에이전트로 라우팅합니다. (직접 LLM 호출 기반 위임)
+    Central dispatcher for the Jarvis AI Framework.
+    Analyzes requests and routes them to the appropriate specialized agent.
     """
-    # --- BaseAgent Fields ---
-    # name, description은 BaseAgent에서 처리됨
-
-    # --- JarvisDispatcher Specific Fields ---
+    # Declare fields using Pydantic Field
+    model: str = Field(default=DEFAULT_MODEL_NAME) # Explicitly declare model field
     input_parser: InputParserAgent = Field(default_factory=InputParserAgent)
     sub_agents: Dict[str, Agent] = Field(default_factory=dict)
-    tools: List[Agent] = Field(default_factory=list) # BaseAgent는 tools 속성을 가짐
+    # response_generator: ResponseGenerator = Field(default_factory=ResponseGenerator) # 주석 처리
+    # context_manager: ContextManager = Field(default_factory=ContextManager) # 주석 처리
+    llm_clients: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     current_parsed_input: Optional[ParsedInput] = None
     current_original_language: Optional[str] = None
-    llm_clients: Dict[str, Any] = Field(default_factory=dict, exclude=True)
-    # model과 instruction에 기본값 제공 (Field 사용)
-    model: str = Field(default=DEFAULT_MODEL_NAME)
-    instruction: str = Field(default=DEFAULT_INSTRUCTION)
-
-    # BaseAgent는 llm 속성이 없으므로 제거 또는 주석 처리
-    # llm: Any = Field(None, exclude=True)
 
     def __init__(self, **kwargs):
-        """JarvisDispatcher 초기화"""
-        # Pydantic 모델이 필드를 처리하므로, __init__에서 model 파라미터 제거 가능
-        # 또는 kwargs에서 가져와 명시적으로 설정 가능
-        # 여기서는 kwargs를 통해 오버라이드 허용
-        # self.model 대신 모듈 레벨 기본값 사용
-        model_name = kwargs.pop('model', DEFAULT_MODEL_NAME)
-        # self.instruction 대신 모듈 레벨 기본값 사용
-        instruction_text = kwargs.pop('instruction', DEFAULT_INSTRUCTION)
+        """
+        Initializes the JarvisDispatcher.
+        """
+        # Ensure default name and description are in kwargs before calling super
+        kwargs.setdefault('name', "JarvisDispatcher")
+        kwargs.setdefault('description', "Central dispatcher for the Jarvis AI Framework. Analyzes requests and routes them to the appropriate specialized agent.")
 
-        # BaseAgent에 필요한 name, description 설정
-        name = kwargs.pop('name', "JarvisDispatcher")
-        description = kwargs.pop('description', "Central dispatcher for the Jarvis AI Framework.")
+        # Pass kwargs (including potentially defaulted name/description) to super().__init__
+        super().__init__(**kwargs)
 
-        # BaseAgent 초기화
-        super().__init__(name=name, description=description, **kwargs)
+        # Ensure default model is set if not provided in kwargs
+        # (super init should handle model from kwargs, but set default if missing)
+        if 'model' not in kwargs:
+            self.model = DEFAULT_MODEL_NAME
+            logger.info(f"Dispatcher model not provided in kwargs, using default: {self.model}")
+        else:
+             # super().__init__ already set self.model from kwargs if present
+             logger.info(f"Dispatcher model initialized to: {self.model}")
 
-        # Dispatcher 특정 속성 설정 (Pydantic 필드 값 업데이트)
-        # 이 시점에서는 self.model, self.instruction 필드가 Pydantic에 의해
-        # 클래스 레벨 기본값(DEFAULT_...)으로 이미 설정되어 있을 수 있음.
-        # kwargs 값으로 명시적으로 덮어쓰는 것이 안전.
-        self.model = model_name
-        self.instruction = instruction_text
-        # llm_clients는 Pydantic Field default_factory로 초기화됨
-        # self.tools는 BaseAgent 또는 Pydantic Field default_factory로 초기화됨
-        if not hasattr(self, 'tools') or self.tools is None:
-             self.tools = []
+        # Update instruction after super init if needed
+        self.instruction = DEFAULT_INSTRUCTION
 
-        # 디스패처 자신의 모델에 대한 LLM 클라이언트 초기화 시도
+        # Register agents after ensuring self.sub_agents exists (due to default_factory)
+        self.register_agent(CodingAgent())
+        self.register_agent(KnowledgeQA_Agent())
+
+        # Initialize LLM client for the dispatcher's model
         self._initialize_llm_client(self.model)
 
-        # --- Register initial agents --- #
-        # Create instances and register them
-        coding_agent_instance = CodingAgent()
-        qa_agent_instance = KnowledgeQA_Agent()
-        self.register_agent(coding_agent_instance)
-        self.register_agent(qa_agent_instance)
-        # --- Agent registration complete --- #
-
         # --- Init Log ---
-        logger.info(f"Initialized JarvisDispatcher (as BaseAgent).")
+        logger.info(f"Initialized JarvisDispatcher (as LlmAgent).")
         logger.info(f" - Name: {self.name}")
         logger.info(f" - Description: {self.description[:50]}...")
         logger.info(f" - Dispatcher Model: {self.model}")
@@ -165,22 +151,25 @@ class JarvisDispatcher(BaseAgent):
         if not agent.name:
             raise ValueError("Registered agent must have a valid name.")
 
-        # 에이전트의 모델에 대한 LLM 클라이언트 초기화 시도 (LlmAgent인 경우)
         if isinstance(agent, LlmAgent) and agent.model:
              self._initialize_llm_client(agent.model)
 
         is_overwriting = agent.name in self.sub_agents
-        if is_overwriting:
-            logger.warning(f"Agent with name '{agent.name}' already registered. Overwriting.")
-            current_tools = [tool for tool in self.tools if getattr(tool, 'name', None) != agent.name]
-        else:
-            current_tools = list(self.tools)
 
+        # Update sub_agents dictionary first
         self.sub_agents[agent.name] = agent
-        current_tools.append(agent)
-        self.tools = current_tools # BaseAgent의 tools 속성 업데이트
 
-        logger.info(f"Agent '{agent.name}' (type: {type(agent)}, model: {getattr(agent, 'model', 'N/A')}) registered. Current tools: {[getattr(t, 'name', 'N/A') for t in self.tools]}")
+        # Rebuild the tools list from the updated sub_agents dictionary
+        # Ensure the dispatcher itself isn't accidentally added as a tool
+        updated_tools = list(self.sub_agents.values())
+
+        # Assign the newly built list to self.tools
+        self.tools = updated_tools
+
+        # Log the registration
+        if is_overwriting:
+            logger.warning(f"Agent with name \'{agent.name}\' overwritten.")
+        logger.info(f"Agent '{agent.name}' (type: {type(agent)}, model: {getattr(agent, 'model', 'N/A')}) registered/updated. Current tools: {[getattr(t, 'name', 'N/A') for t in self.tools]}")
 
     async def process_request(self, user_input: str) -> str:
         """

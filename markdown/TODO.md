@@ -60,10 +60,10 @@
         *   필요에 따라 다른 관련 필드(예: 신뢰도 점수)를 추가할 수 있습니다.
 - [X] **2.2. `InputParserAgent` 클래스 정의 (`src/jarvis/components/input_parser.py`)**
     - [X] ADK `LlmAgent` 상속 (`google.adk.agents` 사용)
-        - 이 파일에서는 `google.adk.agents` 모듈에서 `LlmAgent` 클래스를 가져옵니다.
-        - `src.jarvis.models.input` 모듈에서 `ParsedInput` 클래스를 가져옵니다.
-        - 필요시 Google Cloud와 Vertex AI 서비스를 위한 라이브러리를 가져옵니다.
-        - `InputParserAgent` 클래스를 정의하고 `LlmAgent`를 상속받습니다.
+        - [X] 이 파일에서는 `google.adk.agents` 모듈에서 `LlmAgent` 클래스를 가져옵니다.
+        - [X] `src.jarvis.models.input` 모듈에서 `ParsedInput` 클래스를 가져옵니다.
+        - [X] 필요시 Google Cloud와 Vertex AI 서비스를 위한 라이브러리를 가져옵니다.
+        - [X] `InputParserAgent` 클래스를 정의하고 `LlmAgent`를 상속받습니다.
     - [X] `__init__` 메서드 구현
         - 부모 클래스(`LlmAgent`) 초기화 시 `name`, `description`, `model` 파라미터 전달 (예: `model="gemini-2.0-flash-exp"`).
         - 필요시 추가적인 모델 초기화 코드를 구현할 수 있습니다.
@@ -86,7 +86,7 @@
 - [X] **2.6. `ParsedInput` 객체 생성 및 반환 (`process_input` 메서드 내)**
     - [X] 수집된 정보 (`original_text`, `original_language`, `english_text`, `intent`, `entities`, `domain`)를 사용하여 `ParsedInput` 객체 인스턴스화
     - [X] 생성된 `ParsedInput` 객체 반환
-- [-] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가
+- [-] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가 (및 관련 통합 테스트)
 
 ## 3. 에이전트 라우팅 계층 (MCP/Dispatcher) (`src/jarvis/core/dispatcher.py`)
 
@@ -143,11 +143,11 @@
 ## 5. 툴 및 컨텍스트 관리 계층
 
 *   **5.1. 툴 정의 (`src/jarvis/tools/`)**
-    - [ ] **번역 툴 (`src/jarvis/tools/translate_tool.py`)**
-        - [ ] `translate_text(text: str, target_language: str, source_language: str = 'auto') -> str` 함수 정의
-        - [ ] 함수 내부에 LLM 호출 로직 구현 (번역용 프롬프트 사용, 예: `"Translate the following text from {source_language} to {target_language}: {text}"`)
-        - [ ] ADK `Tool` 객체 생성 (`function_declarations`에 함수 정보 명시, `description` 포함)
-        - [ ] `source_language`와 `target_language` 파라미터는 ISO 639-1 언어 코드 사용 (예: 'ko', 'en', 'ja')
+    - [X] **번역 툴 (`src/jarvis/tools/translate_tool.py`)**
+        - [X] `translate_text(text: str, target_language: str, source_language: str = 'auto') -> str` 함수 정의
+        - [X] 함수 내부에 LLM 호출 로직 구현 (번역용 프롬프트 사용, 예: `"Translate the following text from {source_language} to {target_language}: {text}"`)
+        - [X] ADK `Tool` 객체 생성 (`function_declarations`에 함수 정보 명시, `description` 포함)
+        - [X] `source_language`와 `target_language` 파라미터는 ISO 639-1 언어 코드 사용 (예: 'ko', 'en', 'ja')
     - [ ] **웹 검색 툴 (`src/jarvis/tools/web_search_tool.py`)**
         - [ ] `web_search(query: str) -> str` 함수 정의
         - [ ] 외부 검색 API (예: Google Custom Search API, Tavily API 등) 호출 로직 구현

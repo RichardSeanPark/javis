@@ -129,6 +129,10 @@ class TestJarvisDispatcherReal:
     def test_register_agent_updates_sub_agents_and_tools(self):
         """register_agent가 sub_agents와 tools 리스트를 모두 업데이트하는지 확인"""
         dispatcher = JarvisDispatcher(model="mock-model-for-reg-check") # Dummy model ok
+        # --- 추가: 테스트 시작 시 sub_agents 및 tools 초기화 ---
+        dispatcher.sub_agents = {}
+        dispatcher.tools = []
+        # --- 초기화 끝 ---
         agent1 = LlmAgent(name="Agent1", description="Desc 1")
         agent2 = LlmAgent(name="Agent2", description="Desc 2")
 
@@ -151,6 +155,10 @@ class TestJarvisDispatcherReal:
         caplog.set_level(logging.WARNING)
 
         dispatcher = JarvisDispatcher(model="mock-model-for-reg-check") # Dummy model ok
+        # --- 추가: 테스트 시작 시 sub_agents 및 tools 초기화 ---
+        dispatcher.sub_agents = {}
+        dispatcher.tools = []
+        # --- 초기화 끝 ---
         agent_v1 = LlmAgent(name="AgentV", description="V1")
         agent_v2 = LlmAgent(name="AgentV", description="V2") # Same name
 
@@ -158,6 +166,9 @@ class TestJarvisDispatcherReal:
         assert agent_v1 in dispatcher.tools
         assert len(dispatcher.tools) == 1
         assert dispatcher.tools[0].description == "V1"
+        # --- 추가: 첫 번째 등록 확인 ---
+        assert "AgentV" in dispatcher.sub_agents, "AgentV should be in sub_agents after first registration"
+        # --- 확인 끝 ---
 
         # Clear previous logs before registering again
         caplog.clear()
@@ -170,10 +181,14 @@ class TestJarvisDispatcherReal:
         assert dispatcher.tools[0] == agent_v2
         assert dispatcher.tools[0].description == "V2"
 
+        # --- 추가: 실제 로그 출력 ---
+        print(f"Captured logs after second registration:\n{caplog.text}")
+        # --- 로그 출력 끝 ---
+
         # Check logs for the warning message
-        assert "Agent with name 'AgentV' already registered. Overwriting." in caplog.text
+        assert "Agent with name 'AgentV' overwritten." in caplog.text # <<< WARNING 로그 확인 활성화
         # Check for the info message as well (might need to adjust level if checking info)
-        # assert "Agent 'AgentV' registered." in caplog.text # Assuming info level logging
+        # assert "Agent 'AgentV' (type: <class 'google.adk.agents.llm_agent.LlmAgent'>, model: N/A) registered/updated." in caplog.text # <<< INFO 로그 확인 제거
 
 
     # --- Integration Tests using Real Components ---
@@ -195,6 +210,11 @@ class TestJarvisDispatcherReal:
         print(f"Registered Agents: {[a['name'] for a in registered_agents_config]}")
         print(f"Expecting delegation to: {expect_delegation_to}")
         print(f"Expecting non-delegation reason containing: {expect_no_delegation_reason}")
+
+        # --- 추가: 테스트 실행 전 디스패처 상태 초기화 ---
+        real_dispatcher.sub_agents = {}
+        real_dispatcher.tools = []
+        # --- 초기화 끝 ---
 
         # 1. Register REAL Agents (LlmAgent instances, no mocking/patching)
         agent_instances = []
@@ -377,7 +397,7 @@ class TestJarvisDispatcherReal:
                 # Assertions
                 mock_get_client.assert_called_once_with(dispatcher.model)
                 mock_generate_content_method.assert_called_once() # Assert on the final mocked method
-                assert "No suitable internal agent found. Checking A2A Hub (Placeholder)." in caplog.text, \
+                assert "No suitable internal agent found via LLM. Attempting A2A Discovery (Placeholder)." in caplog.text, \
                     "Log message for A2A placeholder check not found."
 
     @pytest.mark.asyncio

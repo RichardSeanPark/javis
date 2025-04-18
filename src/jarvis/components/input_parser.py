@@ -45,14 +45,20 @@ class InputParserAgent(BaseAgent):
     llm: Optional[genai.Client] = None # genai.Client 타입으로 변경
     # instruction: str = Field(default="...") # 필요시 자체 instruction 필드 추가
 
-    def __init__(self, **kwargs):
-        """InputParserAgent 초기화"""
-        # BaseAgent의 __init__ 호출 시 model, instruction 전달 제거
-        super().__init__(name="InputParserAgent", description="Parses user input for language, intent, entities, and domain.")
-        # kwargs 처리 (Pydantic이 자동으로 처리할 수도 있음)
-        # for key, value in kwargs.items():
-        #     if hasattr(self, key):
-        #         setattr(self, key, value)
+    def __init__(self, api_key: Optional[str] = None, **kwargs):
+        """
+        Initializes the InputParserAgent.
+
+        Args:
+            api_key: Optional Google Generative AI API key. If not provided,
+                     it will try to load from the GOOGLE_API_KEY environment variable.
+            **kwargs: Additional keyword arguments to pass to the LlmAgent.
+        """
+        super().__init__(
+            name="InputParserAgent",
+            description="Parses user input for language, intent, entities, and domain.",
+            **kwargs,
+        )
 
         # LLM 클라이언트 초기화 (BaseAgent는 llm 객체를 자동으로 만들지 않음)
         self.llm = None
@@ -82,7 +88,10 @@ class InputParserAgent(BaseAgent):
         # --- 언어 감지 (이전 단계에서 구현) ---
         try:
             lang_detection_prompt = (
-                f"Detect the language of the following text and return only the ISO 639-1 code:\\n\\n"
+                f"Analyze the following text and identify its primary language. "
+                f"Respond with ONLY the two-letter ISO 639-1 code for that language. "
+                f"For example, respond 'en' for English, 'ko' for Korean, 'fr' for French. "
+                f"Do not include any other text, explanation, or formatting. Just the code.\\n\\n"
                 f"Text: {user_input}"
             )
             # model = genai.GenerativeModel('gemini-2.0-flash-exp') # 이전
@@ -128,14 +137,33 @@ class InputParserAgent(BaseAgent):
 
         # --- 2.5. 의도/엔티티/도메인 분석 기능 구현 (english_text 사용) ---
         try:
-            analysis_prompt = (
-                f"Analyze the following English text. Identify the primary intent (e.g., code_generation, question_answering, document_summary), "
-                f"extract key entities as a simple JSON object (key-value pairs), and determine the main domain (e.g., coding, finance, general). "
-                f"Respond ONLY with a JSON object containing the keys 'intent', 'entities', and 'domain'. The value for 'entities' should be a JSON object itself or null. "
-                f"Example format: "
-                f"{{ \"intent\": \"example_intent\", \"entities\": {{ \"key1\": \"value1\" }}, \"domain\": \"example_domain\" }}\n\n"
-                f"Text: {english_text}"
+            # 프롬프트 부분을 나누어 정의 (일반 문자열 사용)
+            prompt_intro = (
+                "Analyze the following English text. Identify the primary intent, extract key entities, and determine the main domain. "
+                "Respond ONLY with a JSON object containing the keys 'intent', 'entities', and 'domain'. "
+                "The value for 'entities' should be a JSON object itself or null. "
+                "Available intents include: code_generation, question_answering, greeting, self_description, statement, request_joke, etc. " # 의도 예시 추가
+                "Crucially, ONLY use the 'translation' intent if the user explicitly asks TO TRANSLATE something. " # 강조 및 명확화
+                "For simple statements of fact or self-description (like 'I am a student'), use 'statement' or 'self_description', NOT 'translation'." # 구체적 예시 및 지침 추가
             )
+            prompt_domain_guidelines = (
+                "Use the following domain guidelines: "
+                "'coding' for software development tasks, "
+                "'finance' for financial queries, "
+                "'geography' for location-based questions, "
+                "'weather' for weather requests, "
+                "'general' for common greetings, chit-chat, or topics not covered by other domains. "
+            )
+            prompt_example = (
+                "Example format: "
+                # Correctly escaped JSON example within a standard Python string
+                '{{ "intent": "example_intent", "entities": {{ "key1": "value1" }}, "domain": "example_domain" }}\n\n'
+            )
+            prompt_text_part = "Text: " # f-string 필요 없는 부분 분리
+
+            # 프롬프트 결합 (필요한 부분만 f-string 사용)
+            analysis_prompt = prompt_intro + prompt_domain_guidelines + prompt_example + prompt_text_part + english_text
+
             # model = genai.GenerativeModel('gemini-2.0-flash-exp') # 이전
             # response = await model.generate_content_async(analysis_prompt) # 이전
             response_text = await self._call_llm(analysis_prompt, model_id='gemini-2.0-flash-exp') # _call_llm 사용

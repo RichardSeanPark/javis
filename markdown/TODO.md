@@ -198,9 +198,9 @@
     - [X] Agent Hub `/discover` API 호출 및 검색된 A2A 에이전트(자체 ADK 에이전트 포함)와 통신하는 로직 구현
     - [X] A2A Discovery 쿼리 구조화 (능력 기술, 필요한 입출력 형식 등 명시)
     - [X] A2A 응답 처리 및 에이전트 선택 로직 구현
-- [ ] **7.5. Agent Card 정의 (`config/agent_cards/`)**: 
-    - [ ] 각 에이전트(Coding, QA)의 능력을 상세히 기술한 JSON 파일 생성
-    - [ ] Agent Card에는 에이전트 이름, 설명, 지원하는 능력 목록, 입출력 형식, 인증 요구사항 등을 명시
+- [X] **7.5. Agent Card 정의 (`config/agent_cards/`)**: 
+    - [X] 각 에이전트(Coding, QA)의 능력을 상세히 기술한 JSON 파일 생성
+    - [X] Agent Card에는 에이전트 이름, 설명, 지원하는 능력 목록, 입출력 형식, 인증 요구사항 등을 명시
 - [ ] **7.6. A2A Task 표준 적용**: 
     - [ ] 작업 요청/응답 시 `google-a2a-python` 라이브러리의 Task 관련 클래스 사용
     - [ ] `Task`, `TaskStatus`, `TaskResult` 등 A2A 표준 클래스를 활용하여 작업 생성 및 관리

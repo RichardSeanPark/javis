@@ -1,0 +1,55 @@
+{
+  "name": "KnowledgeQA_Agent",
+  "description": "Answers general knowledge questions in English. Can use web search for up-to-date information.",
+  "url": "http://localhost:8003/a2a",
+  "provider": {
+    "organization": "Jarvis Internal"
+  },
+  "version": "0.1.0",
+  "documentationUrl": null,
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "authentication": null,
+  "defaultInputModes": ["text"],
+  "defaultOutputModes": ["text"],
+  "skills": [
+    {
+      "id": "general_qa",
+      "name": "General Question Answering",
+      "description": "Answers questions based on general knowledge.",
+      "tags": ["qa", "knowledge", "general"],
+      "examples": [
+        "What is the capital of France?",
+        "Explain the theory of relativity."
+      ],
+      "inputModes": ["text"],
+      "outputModes": ["text"]
+    },
+    {
+      "id": "web_search_qa",
+      "name": "Web Search Question Answering",
+      "description": "Uses web search to answer questions about current events or topics requiring up-to-date information.",
+      "tags": ["qa", "knowledge", "web search", "current events"],
+       "examples": [
+        "What is the latest news about the Mars rover?",
+        "Who won the latest F1 race?"
+      ],
+      "inputModes": ["text"],
+      "outputModes": ["text"]
+    },
+    {
+      "id": "translation_assistance",
+      "name": "Translation Assistance",
+      "description": "Can assist with simple translations as part of answering questions.",
+      "tags": ["qa", "translation"],
+       "examples": [
+        "How do you say 'hello' in Spanish?"
+      ],
+      "inputModes": ["text"],
+      "outputModes": ["text"]
+    }
+  ]
+} 

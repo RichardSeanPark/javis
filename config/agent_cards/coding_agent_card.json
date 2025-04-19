@@ -1,0 +1,55 @@
+{
+  "name": "CodingAgent",
+  "description": "Generates, analyzes, debugs, and optimizes code based on user requests in English. Can execute Python code.",
+  "url": "http://localhost:8002/a2a",
+  "provider": {
+    "organization": "Jarvis Internal"
+  },
+  "version": "0.1.0",
+  "documentationUrl": null,
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "authentication": null,
+  "defaultInputModes": ["text"],
+  "defaultOutputModes": ["text"],
+  "skills": [
+    {
+      "id": "code_generation",
+      "name": "Code Generation",
+      "description": "Generates code snippets or full programs based on natural language descriptions.",
+      "tags": ["coding", "programming", "development", "python"],
+      "examples": [
+        "Write a python function to calculate factorial.",
+        "Create a simple flask web server."
+      ],
+      "inputModes": ["text"],
+      "outputModes": ["text", "code"]
+    },
+    {
+      "id": "code_analysis",
+      "name": "Code Analysis",
+      "description": "Analyzes provided code for errors, style issues, or explains its functionality.",
+      "tags": ["coding", "debugging", "review", "explanation"],
+       "examples": [
+        "Explain this python code.",
+        "Find bugs in my script."
+      ],
+      "inputModes": ["text", "code"],
+      "outputModes": ["text"]
+    },
+     {
+      "id": "code_execution",
+      "name": "Code Execution",
+      "description": "Executes provided Python code snippets and returns the output.",
+      "tags": ["coding", "execution", "python", "testing"],
+      "examples": [
+        "Run this python code: print('hello')"
+      ],
+      "inputModes": ["text", "code"],
+      "outputModes": ["text"]
+    }
+  ]
+} 

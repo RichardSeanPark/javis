@@ -348,3 +348,19 @@
     - [X] `_discover_a2a_agents`가 빈 목록을 반환했을 때, `_call_a2a_agent`가 호출되지 않고 "No suitable..." 메시지가 반환되는지 확인
     - [X] A2A 검색(`_discover_a2a_agents`) 중 에러 발생 시 (HTTP 오류 등), 에러가 로깅되고 `_call_a2a_agent`가 호출되지 않으며 최종적으로 "No suitable..." 메시지가 반환되는지 확인 (Placeholder 동작 확인 - 로그는 발생 안 함)
     - [X] A2A 호출(`_call_a2a_agent`) 중 에러 발생 시 (HTTP 오류, 파싱 오류, 실패 상태 등), 에러가 로깅되고 해당 에러 메시지가 `process_request`의 최종 반환값이 되는지 확인 (Placeholder 동작 확인 - 호출 안됨)
+
+### 7.5. Agent Card 정의 (`config/agent_cards/`)
+- [X] **7.5. Agent Card 정의 (`config/agent_cards/`)**:
+    - [X] 각 에이전트(Coding, QA)의 능력을 상세히 기술한 JSON 파일 생성
+    - [X] Agent Card에는 에이전트 이름, 설명, 지원하는 능력 목록, 입출력 형식, 인증 요구사항 등을 명시
+    - [X] `config/agent_cards/coding_agent_card.json` 파일이 존재하는지 확인
+    - [X] `coding_agent_card.json` 파일이 유효한 JSON 형식인지 확인
+    - [X] `coding_agent_card.json` 파일 내용에 필수 필드(name, description, url, version, capabilities, skills)가 포함되어 있는지 확인
+    - [X] `config/agent_cards/qa_agent_card.json` 파일이 존재하는지 확인
+    - [X] `qa_agent_card.json` 파일이 유효한 JSON 형식인지 확인
+    - [X] `qa_agent_card.json` 파일 내용에 필수 필드(name, description, url, version, capabilities, skills)가 포함되어 있는지 확인
+
+### 7.6. A2A Task 표준 적용
+- [ ] **7.6. A2A Task 표준 적용**: 
+    - [ ] 작업 요청/응답 시 `google-a2a-python` 라이브러리의 Task 관련 클래스 사용
+    - [ ] `Task`, `TaskStatus`, `TaskResult` 등 A2A 표준 클래스를 활용하여 작업 생성 및 관리

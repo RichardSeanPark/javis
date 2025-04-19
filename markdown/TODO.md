@@ -148,7 +148,7 @@
         *   [X] `register_agent` 메서드 호출 또는 `sub_agents` 리스트/딕셔너리에 추가
         *   [X] Dispatcher의 `tools` 속성 또는 `sub_agents` 파라미터에 이 에이전트들을 포함시켜 자동 위임 준비
 
-## 5. 툴 및 컨텍스트 관리 계층
+## 5. [X] 툴 및 컨텍스트 관리 계층
 
 *   **5.1. 툴 정의 (`src/jarvis/tools/`)**
     - [X] **번역 툴 (`src/jarvis/tools/translate_tool.py`)**

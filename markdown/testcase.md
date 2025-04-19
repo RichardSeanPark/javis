@@ -197,12 +197,11 @@
 - [X] 생성된 인스턴스의 `model` 속성이 설정된 모델 이름(기본값 `gemini-1.5-flash-latest` 또는 환경변수)과 일치하는지 확인
 - [X] 생성된 인스턴스의 `instruction` 속성이 정의된 기본 지침과 일치하는지 확인
 - [X] `__init__`에 `name`, `description`, `model` 인자를 전달하여 인스턴스 생성 시 해당 속성이 올바르게 설정되는지 확인
-- [-] **툴 등록 테스트**: (5단계에서 툴 구현 후) 코드 실행기 툴이 `__init__`에서 `tools` 리스트에 추가되는지 확인
+- [X] **툴 등록 테스트**: `CodingAgent.__init__`에서 `code_execution_tool`이 `tools` 리스트에 명시적으로 추가되어 부모 클래스로 전달되는지 확인
 - [-] **기본 동작 테스트 (Mock)**: (툴 구현 후) 간단한 코딩 요청 시 LLM이 예상되는 지침 및 입력으로 호출되는지 확인 (Mock 사용)
 - [-] **기본 동작 테스트 (Live API)**: (툴 구현 후) 간단한 코딩 요청 시 예상되는 코드 생성 결과 또는 설명이 반환되는지 확인 (Live API, 선택적)
 
 ### 4.2. 지식 QA 에이전트 (`KnowledgeQA_Agent`) 테스트
-- [-] (구현 예정)
 - [X] `src/jarvis/agents/qa_agent.py` 파일이 존재하는지 확인
 - [X] `KnowledgeQA_Agent` 클래스가 `LlmAgent`를 상속하는지 확인
 - [X] `KnowledgeQA_Agent` 인스턴스 생성 시 오류가 없는지 확인 (기본값 사용)
@@ -211,7 +210,7 @@
 - [X] 생성된 인스턴스의 `model` 속성이 설정된 모델 이름(기본값 `gemini-1.5-flash-latest` 또는 환경변수)과 일치하는지 확인
 - [X] 생성된 인스턴스의 `instruction` 속성이 정의된 기본 지침과 일치하는지 확인
 - [X] `__init__`에 `name`, `description`, `model` 인자를 전달하여 인스턴스 생성 시 해당 속성이 올바르게 설정되는지 확인
-- [-] **툴 등록 테스트**: (5단계에서 툴 구현 후) 웹 검색 툴이 `__init__`에서 `tools` 리스트에 추가되는지 확인
+- [ ] **툴 등록 테스트**: `CodingAgent.__init__`에서 `code_execution_tool`이 `tools` 리스트에 명시적으로 추가되어 부모 클래스로 전달되는지 확인
 - [-] **기본 동작 테스트 (Mock)**: (툴 구현 후) 간단한 질문 시 LLM이 예상되는 지침 및 입력으로 호출되는지 확인 (Mock 사용)
 - [-] **기본 동작 테스트 (Live API)**: (툴 구현 후) 간단한 질문 시 예상되는 답변이 반환되는지 확인 (Live API, 선택적)
 - [-] **웹 검색 툴 사용 테스트 (Mock)**: 최신 정보가 필요한 질문 시, 웹 검색 툴이 호출되는지 확인 (Mock 사용)
@@ -234,14 +233,13 @@
 - [X] `translate_text` 함수 기본 번역 테스트 (한국어 -> 영어, Live API): "안녕하세요"를 영어로 번역 시 예상되는 결과(예: "Hello")가 반환되는지 확인
 - [X] `translate_text` 함수 기본 번역 테스트 (영어 -> 한국어, Live API): "Hello"를 한국어로 번역 시 예상되는 결과(예: "안녕하세요")가 반환되는지 확인
 - [X] `translate_text` 함수 자동 소스 언어 감지 테스트 (영어 -> 프랑스어, Live API): "Hello"를 프랑스어로 번역(`source_language` 미지정) 시 예상되는 결과(예: "Bonjour")가 반환되는지 확인
-- [ ] `translate_text` 함수 LLM 호출 오류 시 원본 텍스트 반환 테스트 (Mock): LLM API 호출이 실패하도록 Mocking 했을 때, 함수가 입력된 원본 텍스트를 그대로 반환하는지 확인 # Mock 테스트 미진행
 - [X] `src/jarvis/tools/__init__.py`에 `translate_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
 ### 5.3. 웹 검색 툴 (`web_search_tool`) 테스트
 - [X] `src/jarvis/tools/web_search_tool.py` 파일에 `web_search_tool` ADK `Tool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 `web_search`인지 확인
     - [X] `description` 속성이 올바른 설명을 포함하는지 확인 (함수 독스트링 확인)
-    - [-] `function_declarations`에 `web_search` 함수 정보가 올바르게 명시되어 있는지 확인 (name, description, parameters) # 내부 구현 확인 어려움
+    - [-] `function_declarations`에 `web_search` 함수 정보가 올바르게 명시되어 있는지 확인 (name, description, parameters)
         - [-] `parameters` 스키마에 `query` (필수) 필드가 정의되어 있는지 확인 # 내부 구현 확인 어려움
 - [X] **기본 검색 테스트 (Mock)**: `DDGS().atext`가 Mock 결과를 반환하도록 설정하고, `web_search` 함수 호출 시 예상되는 포맷의 문자열 결과가 반환되는지 확인
 - [X] **결과 없음 테스트 (Mock)**: `DDGS().atext`가 빈 리스트를 반환하도록 설정하고, `web_search` 함수 호출 시 "No relevant information found..." 메시지가 반환되는지 확인

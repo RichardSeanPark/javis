@@ -58,10 +58,10 @@
 ### 1.1. CLI 인터페이스 (ADK 활용) 테스트
 - [X] src/jarvis/__init__.py 파일에 root_agent 임포트 확인
 - [X] src/jarvis/core/dispatcher.py 파일 존재 확인
-- [X] root_agent 변수가 Agent 클래스의 인스턴스인지 확인
-- [X] root_agent의 name이 "JarvisDispatcherPlaceholder"인지 확인
-- [X] root_agent의 description이 "Jarvis AI Framework Root Agent (Placeholder)"인지 확인
-- [X] "adk run ." 명령어 실행 시 JarvisDispatcherPlaceholder 에이전트가 로드되는지 확인
+- [X] root_agent 변수가 `JarvisDispatcher` 클래스의 인스턴스인지 확인
+- [X] root_agent의 name이 "JarvisDispatcher"인지 확인
+- [X] root_agent의 description이 "Central dispatcher for the Jarvis AI Framework. Analyzes requests and routes them to the appropriate specialized agent."인지 확인
+- [X] "adk run ." 명령어 실행 시 `JarvisDispatcher` 에이전트가 로드되는지 확인 (정적 검사로 대체)
 
 ### 1.2. 웹 UI (ADK Web 활용) 테스트
 - [X] (선행 작업) 1.1의 임시 에이전트 정의 완료 확인

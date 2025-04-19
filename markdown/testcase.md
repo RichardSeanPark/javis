@@ -361,6 +361,10 @@
     - [X] `qa_agent_card.json` 파일 내용에 필수 필드(name, description, url, version, capabilities, skills)가 포함되어 있는지 확인
 
 ### 7.6. A2A Task 표준 적용
-- [ ] **7.6. A2A Task 표준 적용**: 
-    - [ ] 작업 요청/응답 시 `google-a2a-python` 라이브러리의 Task 관련 클래스 사용
-    - [ ] `Task`, `TaskStatus`, `TaskResult` 등 A2A 표준 클래스를 활용하여 작업 생성 및 관리
+- [X] **7.6. A2A Task 표준 적용**: 
+    - [X] 작업 요청/응답 시 `google-a2a-python` 라이브러리의 Task 관련 클래스 사용 (`common.types` 확인)
+    - [X] `Task`, `TaskStatus`, `TaskState` 등 A2A 표준 클래스를 활용하여 작업 생성 및 관리 (`_call_a2a_agent` 내 확인)
+    - [X] 작업 상태 추적 및 결과 처리 로직 구현 (`_call_a2a_agent` 내 `status.state` 확인 및 결과/오류 처리 로직)
+
+---
+**참고:** 이 목록은 Vibe Coding을 위한 매우 상세한 가이드이며, 실제 구현 중 AI 어시스턴트와의 상호작용을 통해 각 단계를 진행하고 확인합니다. 필요에 따라 목록은 수정될 수 있습니다. 

@@ -201,10 +201,10 @@
 - [X] **7.5. Agent Card 정의 (`config/agent_cards/`)**: 
     - [X] 각 에이전트(Coding, QA)의 능력을 상세히 기술한 JSON 파일 생성
     - [X] Agent Card에는 에이전트 이름, 설명, 지원하는 능력 목록, 입출력 형식, 인증 요구사항 등을 명시
-- [ ] **7.6. A2A Task 표준 적용**: 
-    - [ ] 작업 요청/응답 시 `google-a2a-python` 라이브러리의 Task 관련 클래스 사용
-    - [ ] `Task`, `TaskStatus`, `TaskResult` 등 A2A 표준 클래스를 활용하여 작업 생성 및 관리
-    - [ ] 작업 상태 추적 및 결과 처리 로직 구현
+- [X] **7.6. A2A Task 표준 적용**: 
+    - [X] 작업 요청/응답 시 `google-a2a-python` 라이브러리의 Task 관련 클래스 사용 (`common.types` 활용)
+    - [X] `Task`, `TaskStatus`, `TaskState` 등 A2A 표준 클래스를 활용하여 작업 생성 및 관리 (`_call_a2a_agent` 구현 확인)
+    - [X] 작업 상태 추적 및 결과 처리 로직 구현 (`_call_a2a_agent` 구현 확인)
 
 ---
 **참고:** 이 목록은 Vibe Coding을 위한 매우 상세한 가이드이며, 실제 구현 중 AI 어시스턴트와의 상호작용을 통해 각 단계를 진행하고 확인합니다. 필요에 따라 목록은 수정될 수 있습니다. 

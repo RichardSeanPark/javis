@@ -3,88 +3,103 @@ import pytest
 from google.adk.tools import FunctionTool
 from src.jarvis.tools.code_execution_tool import execute_python_code, code_execution_tool
 # Import types needed for schema verification
-from google.genai.types import FunctionDeclaration, Schema as GenaiSchema, Type as GenaiType
+# from google.genai.types import FunctionDeclaration, Schema as GenaiSchema, Type as GenaiType, Tool # Not needed for this test
+import logging
 
-# Remove @pytest.mark.asyncio as the test is now synchronous
+# Configure logging for tests
+logging.basicConfig(level=logging.INFO)
+
+# Mock data for AsyncDDGS (Keep this if other tests use it, otherwise remove)
+# MOCK_SEARCH_RESULTS = [
+#     {'title': 'Result 1', 'href': 'http://example.com/1', 'body': 'Snippet 1...'},
+#     {'title': 'Result 2', 'href': 'http://example.com/2', 'body': 'Snippet 2...'},
+# ]
+# MOCK_EMPTY_RESULTS = []
+
 def test_code_execution_tool_definition():
     """코드 실행 도구(code_execution_tool) 객체가 올바르게 정의되었는지 확인합니다."""
-    # Check against the specific ADK FunctionTool type
     assert isinstance(code_execution_tool, FunctionTool)
-    # Check the name derived from the function
     assert code_execution_tool.name == "execute_python_code"
-    # Check that the description exists (derived from docstring)
     assert code_execution_tool.description is not None and len(code_execution_tool.description) > 0
-    # Check specific content in description
-    assert "**SECURITY WARNING:**" in code_execution_tool.description
-    assert "Executes the given Python code snippet" in code_execution_tool.description
+    # Check for the security warning removal/update in docstring (optional but good practice)
+    assert "restrictedpython" in code_execution_tool.description
+    assert "exec` function" not in code_execution_tool.description # Verify old warning is gone
 
-    # Note: Accessing detailed parameter schema (types, required) from FunctionTool
-    # object can be unreliable or depend on internal ADK details.
-    # We rely on the function signature and other tests for functional verification.
+# --- Tests for Basic Execution (using restrictedpython) ---
 
 @pytest.mark.asyncio
-async def test_execute_simple_print():
-    """간단한 print 문 실행 시 stdout을 올바르게 캡처하는지 테스트합니다."""
-    code = "print('Hello from test!')"
+async def test_execute_safe_code_success():
+    """5.4: 제한된 실행 성공 테스트 - 안전한 코드가 성공적으로 실행되는지 확인."""
+    code = "x = 10\ny = 20\nprint(x + y)"
     result = await execute_python_code(code)
-    assert "Stdout:" in result
-    assert "Hello from test!" in result
+    assert "Stdout:\n30" in result
     assert "Stderr:" not in result
-    assert "Error during execution:" not in result
 
 @pytest.mark.asyncio
-async def test_execute_calculation_and_print():
-    """계산 및 print 문 실행 시 stdout을 올바르게 캡처하는지 테스트합니다."""
-    code = "x = 10 + 5\nprint(f'Calculation result: {x}')"
-    result = await execute_python_code(code)
-    assert "Stdout:" in result
-    assert "Calculation result: 15" in result
-    assert "Stderr:" not in result
-    assert "Error during execution:" not in result
-
-@pytest.mark.asyncio
-async def test_execute_stderr_capture():
-    """stderr 출력을 올바르게 캡처하는지 테스트합니다."""
+async def test_execute_code_with_stderr():
+    """5.4: Stderr 캡처 테스트 (restrictedpython) - 표준 에러 출력이 캡처되는지 확인."""
     code = "import sys\nsys.stderr.write('This is an error message')"
+    # Note: `import sys` might need to be explicitly allowed if not covered by defaults
+    # For now, assume safe_builtins or similar allows basic sys access needed for stderr capture.
+    # If this fails, we need to adjust _safe_globals in the tool.
     result = await execute_python_code(code)
-    assert "Stdout:" not in result # print가 없으므로 stdout은 없음
-    assert "Stderr:" in result
-    assert "This is an error message" in result
-    assert "Error during execution:" not in result
-
-@pytest.mark.asyncio
-async def test_execute_exception():
-    """코드 실행 중 예외 발생 시 오류 메시지와 traceback을 반환하는지 테스트합니다."""
-    code = "result = 1 / 0"
-    result = await execute_python_code(code)
+    assert "Stderr:\nThis is an error message" in result
     assert "Stdout:" not in result
-    assert "Stderr:" not in result
-    assert "Error during execution:" in result
-    assert "ZeroDivisionError: division by zero" in result
-    assert "Traceback (most recent call last):" in result
-    assert 'File "<string>", line 1' in result # Check if error source is within exec'd code
 
 @pytest.mark.asyncio
-async def test_execute_no_output():
-    """출력이 없는 코드 실행 시 적절한 메시지를 반환하는지 테스트합니다."""
-    code = "a = 1\nb = 2\nc = a + b"
+async def test_execute_no_output_code():
+    """5.4: 출력 없는 코드 테스트 (restrictedpython) - 출력 없는 코드가 성공 메시지를 반환하는지 확인."""
+    code = "a = 1\nb = 2"
     result = await execute_python_code(code)
     assert result == "Code executed successfully with no output."
 
+# --- Tests for RestrictedPython Enforcement ---
+
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Current implementation with exec allows this. Needs sandboxing.")
-async def test_execute_potentially_dangerous_code():
-    """위험할 수 있는 코드 실행 시도를 테스트합니다 (샌드박싱 필요)."""
-    # This test should ideally fail or be blocked in a sandboxed environment.
-    # In the current 'exec' implementation, it might succeed, which is a security risk.
-    code = "import os\nprint(os.system('echo Potentially dangerous'))"
+async def test_execute_disallowed_builtin_open():
+    """5.4: 제한된 내장 함수 사용 불가 테스트 (open) - open 함수 사용 시 오류 반환 확인."""
+    code = "f = open('myfile.txt', 'w')\nf.write('hello')\nf.close()"
     result = await execute_python_code(code)
-    # In a secure setup, this should return an error or restricted message.
-    # For now, we expect it might run (hence the skip).
-    assert "Error" in result or "Restricted" in result # Ideal assertion
+    assert "Execution Error: Use of disallowed name or function: open" in result
 
-# TODO: Add test for registration in tools/__init__.py after implementing that step
+@pytest.mark.asyncio
+async def test_execute_disallowed_import_os():
+    """5.4: 제한된 모듈 임포트 불가 테스트 (os) - os 모듈 임포트 시 오류 반환 확인."""
+    code = "import os\nprint(os.getcwd())"
+    result = await execute_python_code(code)
+    # The specific error might vary slightly depending on restrictedpython version/config
+    # It often manifests as a SyntaxError during compilation phase for imports
+    assert ("Syntax Error:" in result or "ImportError:" in result or "disallowed module" in result)
 
+@pytest.mark.asyncio
+async def test_execute_disallowed_attribute_access():
+    """Test accessing potentially unsafe attributes (e.g., __globals__)."""
+    code = "def x(): pass\nprint(x.__globals__)" 
+    result = await execute_python_code(code)
+    # RestrictedPython should prevent access to sensitive attributes
+    assert "Error during execution:" in result or "restricted" in result.lower()
+
+# --- Tests for Error Handling (within restrictedpython) ---
+
+@pytest.mark.asyncio
+async def test_execute_syntax_error():
+    """5.4: 제한된 컴파일 오류 테스트 (SyntaxError) - 구문 오류 시 컴파일 단계에서 오류 반환 확인."""
+    code = "print('hello\""
+    result = await execute_python_code(code)
+    assert "Syntax Error:" in result
+    # Check for specific message if consistent across versions
+    # assert "(<inline code>, line 1)" in result
+
+@pytest.mark.asyncio
+async def test_execute_runtime_error_zero_division():
+    """5.4: 제한된 런타임 오류 테스트 (ZeroDivisionError) - 허용된 연산 내 런타임 오류 처리 확인."""
+    code = "print(1 / 0)"
+    result = await execute_python_code(code)
+    assert "Error during execution: division by zero" in result
+    assert "Traceback:" not in result # Ensure traceback is not included by default
+
+
+# --- Test Registration (Keep if applicable) ---
 def test_code_execution_tool_registration():
     """코드 실행 도구가 tools/__init__.py의 available_tools 리스트에 등록되었는지 확인합니다."""
     from src.jarvis.tools import available_tools, code_execution_tool

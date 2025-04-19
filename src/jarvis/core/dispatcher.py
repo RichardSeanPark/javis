@@ -164,7 +164,7 @@ class JarvisDispatcher(LlmAgent):
 
         # Initialize LLM client for the agent if it's an LlmAgent with a model
         if isinstance(agent, LlmAgent) and agent.model:
-            self._initialize_llm_client(agent.model)
+             self._initialize_llm_client(agent.model)
 
         is_overwriting = agent.name in self.sub_agents
         self.sub_agents[agent.name] = agent
@@ -188,26 +188,26 @@ class JarvisDispatcher(LlmAgent):
             (error message, A2A result, or fallback message).
         """
         try:
-            # 1. Parse Input
-            if not self.input_parser:
+        # 1. Parse Input
+        if not self.input_parser:
                 logger.error("Input parser unavailable.")
                 return "Error: Input parser unavailable."
             try:
-                parsed_input = await self.input_parser.process_input(user_input)
+        parsed_input = await self.input_parser.process_input(user_input)
             except Exception as e:
                 logger.error(f"Input parsing error: {e}", exc_info=True)
                 return "Error: Failed to parse input."
 
-            self.current_parsed_input = parsed_input
+        self.current_parsed_input = parsed_input
             self.current_original_language = (
                 parsed_input.original_language if parsed_input else None
             )
 
-            if not self.current_parsed_input:
+        if not self.current_parsed_input:
                 logger.error("Input parsing yielded no result.")
-                return "Error: Input parsing failed."
+            return "Error: Input parsing failed."
 
-            llm_input_text = self.current_parsed_input.english_text
+        llm_input_text = self.current_parsed_input.english_text
             logger.info(f"Dispatcher deciding for: {llm_input_text[:100]}...")
 
             # --- Get Conversation History ---
@@ -231,28 +231,28 @@ class JarvisDispatcher(LlmAgent):
             try:
                 tool_descs = "\n".join([
                     f"- {tool.name}: {tool.description}"
-                    for tool in self.tools
+            for tool in self.tools
                     if hasattr(tool, 'name') and hasattr(tool, 'description')
-                ])
+        ])
                 prompt = f"{self.instruction}\n{tool_descs}\n\nUser Request: {llm_input_text}"
-                logger.debug(f"Dispatcher Prompt:\n{prompt}")
+        logger.debug(f"Dispatcher Prompt:\n{prompt}")
             except Exception as e:
                 logger.error(f"Error preparing dispatcher prompt: {e}", exc_info=True)
                 return "Error: Internal error preparing request."
 
             # 3. Call LLM for Delegation Decision / A2A Check
-            dispatcher_llm_client = self.get_llm_client(self.model)
-            if not dispatcher_llm_client:
+        dispatcher_llm_client = self.get_llm_client(self.model)
+        if not dispatcher_llm_client:
                 logger.error(f"Dispatcher LLM client ({self.model}) unavailable.")
                 return "Error: Dispatcher LLM unavailable."
 
             delegated_agent_name = "NO_AGENT"
-            try:
+        try:
                 logger.info(f"Calling dispatcher LLM ({self.model}) for delegation.")
-                response = await dispatcher_llm_client.aio.models.generate_content(
+            response = await dispatcher_llm_client.aio.models.generate_content(
                     model=self.model, contents=[Content(parts=[Part(text=prompt)])]
-                )
-                logger.debug(f"Raw Delegation LLM Response: {response}")
+            )
+            logger.debug(f"Raw Delegation LLM Response: {response}")
 
                 if response and hasattr(response, "text"):
                     potential_agent_name = response.text.strip()
@@ -350,9 +350,9 @@ class JarvisDispatcher(LlmAgent):
         try:
             # Extract user input from context
             if ctx.user_content and ctx.user_content.parts:
-                user_input = ctx.user_content.parts[0].text
+                 user_input = ctx.user_content.parts[0].text
 
-            if not user_input:
+         if not user_input:
                 logger.warning("_run_async_impl called without user input.")
                 final_response = "Error: Could not get user input from context."
             else:
@@ -400,8 +400,8 @@ class JarvisDispatcher(LlmAgent):
                         # --- End temporary modification --- #
 
                         # Yield the delegation event - Runner handles the actual call
-                        yield Event(
-                            author=self.name,
+              yield Event(
+                   author=self.name,
                             content=Content(parts=[Part(text=f"[System] Delegating task to {agent_name}. Runner will invoke.")])
                         )
                         # After yielding delegation, this function's work is done.

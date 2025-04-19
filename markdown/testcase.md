@@ -158,7 +158,28 @@
 ### 3.3.3. A2A 동적 검색 로직 테스트 (Placeholder)
 - [X] **A2A 플레이스홀더 진입 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request` 실행 시 A2A 플레이스홀더 블록 내의 로그("Checking A2A Hub (Placeholder)")가 출력되는지 확인.
 - [X] **A2A 플레이스홀더 후 반환 메시지 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request`가 최종적으로 "No suitable internal or external agent found to handle the request." 메시지를 반환하는지 확인.
-- [-] **A2A 실제 검색/호출 테스트**: (7단계에서 구현 예정)
+- [-] **A2A 실제 검색/호출 테스트**: (7.4에서 상세 테스트)
+
+### 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입 테스트
+- [ ] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `ParsedInput.english_text`와 `original_language`를 올바르게 전달하는지 확인 (Mock 사용)
+- [ ] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `agent_tool_map`에 정의된 올바른 툴 목록만 주입하는지 확인 (Mock 사용)
+- [ ] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, 대화 이력 컨텍스트를 올바르게 주입하는지 확인 (Mock `ContextManager` 사용)
+
+### 3.5. 결과 처리 및 반환 테스트
+- [ ] (향후 구현) 내부 에이전트가 **영어 결과**를 반환했을 때, `ResponseGenerator`로 전달되는지 확인 (Mock `ResponseGenerator`)
+- [ ] (향후 구현) A2A 에이전트 호출 결과가 `ResponseGenerator`로 전달되는지 확인 (Mock `ResponseGenerator`)
+- [ ] (향후 구현) `ResponseGenerator`를 통해 최종 응답이 생성되고 반환되는지 확인 (Mock 사용)
+
+### 3.6. 에러 핸들링 테스트
+- [ ] `InputParserAgent` 호출 시 예외 발생 시, `process_request`가 에러 메시지를 반환하고 종료하는지 확인 (Mock 사용)
+- [ ] 내부 LLM 위임 결정 호출 시 예외 발생 시, `process_request`가 에러 메시지를 반환하고 종료하는지 확인 (Mock 사용)
+- [ ] 등록되지 않은 에이전트 이름이 LLM에서 반환되었을 때, A2A 검색 로직으로 넘어가는지 확인 (Mock 사용)
+- [-] (7.4에서 상세 테스트) A2A 검색(`_discover_a2a_agents`) 중 HTTP 요청 오류 발생 시
+- [-] (7.4에서 상세 테스트) A2A 검색(`_discover_a2a_agents`) 중 API가 4xx/5xx 오류 반환 시
+- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 중 HTTP 요청 오류 발생 시
+- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 중 API가 4xx/5xx 오류 반환 시
+- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 중 `TaskResult` 파싱 오류 발생 시
+- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 결과가 실패 상태(`TaskStatus.FAILED`)일 때
 
 ## 4. 도메인별 에이전트 모듈 계층 테스트
 
@@ -268,7 +289,7 @@
 
 ## 7. 에이전트 간 상호작용 (A2A) 테스트
 
-### 7.1 Agent Hub 서버 테스트 (`src/jarvis/interfaces/agent_hub/server.py`)
+### 7.1. Agent Hub 서버 테스트 (`src/jarvis/interfaces/agent_hub/server.py`)
 - [ ] FastAPI 앱 인스턴스(`app`)가 정상적으로 생성되는지 확인
 - [ ] 루트 경로(`/`) GET 요청 시 "Jarvis Agent Hub is running." 메시지와 함께 200 응답 반환 확인 (TestClient 사용)
 - [ ] `/register` POST 엔드포인트가 존재하는지 확인 (TestClient 사용, 422 Unprocessable Entity 예상 - body 없이 호출)
@@ -301,4 +322,29 @@
     *   [-] (A2AServer 베이스 클래스 또는 직접 구현에 따라) A2A 서버가 특정 경로(예: `/a2a`)의 POST 요청을 처리하도록 설정되었는지 확인
     *   [-] 유효한 JSON-RPC `tasks/send` 요청 전송 시 200 응답과 함께 `handle_task`에서 반환된 Task 객체(JSON 직렬화된 형태)를 받는지 확인 (FastAPI TestClient 사용)
     *   [-] 잘못된 JSON-RPC 형식의 요청 전송 시 적절한 JSON-RPC 오류 응답(예: `invalid request`, `method not found`)을 받는지 확인
-- [ ] **7.4. Dispatcher A2A 클라이언트 로직**: 
+
+### 7.4. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`와 `task_input`으로 호출 시, `agent_card`에서 `a2a_endpoint`를 올바르게 추출하는지 확인
+    - [X] `a2a_endpoint`가 없는 `agent_card`로 호출 시, 에러가 로깅되고 에러 메시지가 반환되는지 확인
+    - [X] `Task` 객체가 올바른 `task_id`, `status`으로 생성되고 `.model_dump()`로 직렬화되는지 확인 (수정된 Task 모델 기준)
+    - [X] `httpx.AsyncClient.post`가 올바른 `agent_endpoint`와 직렬화된 `task_payload`로 호출되는지 확인
+    - [X] A2A 에이전트가 성공적인 `Task` JSON (status: COMPLETED, artifacts 포함)을 반환할 때, `Task` 객체가 파싱되고 결과 텍스트(`artifacts[0].parts[0].text`)가 반환되는지 확인
+    - [X] A2A 에이전트가 실패 `Task` JSON (status: FAILED, status.message 포함)을 반환할 때, 에러가 로깅되고 에러 메시지가 반환되는지 확인
+    - [X] A2A 에이전트 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 에러 메시지가 반환되는지 확인
+    - [X] A2A 에이전트가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 에러 메시지가 반환되는지 확인
+    - [X] 응답 JSON이 유효하지 않은 `Task` 형식일 때 (`pydantic.ValidationError`), 에러가 로깅되고 에러 메시지가 반환되는지 확인
+*   **`process_request` 내 A2A 연동 로직 테스트 (Mock)**
+    - [X] 내부 LLM 위임 결정 결과가 "NO_AGENT"일 때, `_discover_a2a_agents`가 **호출되지 않는지** 확인 (Placeholder 동작 확인)
+    - [X] `_discover_a2a_agents`가 에이전트 목록을 **반환하더라도**, `_call_a2a_agent`가 **호출되지 않고** "No suitable..." 메시지가 반환되는지 확인 (Placeholder 동작 확인)
+    - [X] `_call_a2a_agent`가 **호출되지 않으므로** 해당 결과 반환 테스트는 현재 무의미함
+    - [X] `_discover_a2a_agents`가 빈 목록을 반환했을 때, `_call_a2a_agent`가 호출되지 않고 "No suitable..." 메시지가 반환되는지 확인
+    - [X] A2A 검색(`_discover_a2a_agents`) 중 에러 발생 시 (HTTP 오류 등), 에러가 로깅되고 `_call_a2a_agent`가 호출되지 않으며 최종적으로 "No suitable..." 메시지가 반환되는지 확인 (Placeholder 동작 확인 - 로그는 발생 안 함)
+    - [X] A2A 호출(`_call_a2a_agent`) 중 에러 발생 시 (HTTP 오류, 파싱 오류, 실패 상태 등), 에러가 로깅되고 해당 에러 메시지가 `process_request`의 최종 반환값이 되는지 확인 (Placeholder 동작 확인 - 호출 안됨)

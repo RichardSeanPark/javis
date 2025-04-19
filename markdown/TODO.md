@@ -194,10 +194,10 @@
     - [X] Agent Card 저장 및 검색 로직 구현
 - [X] **7.2. A2A 통신 라이브러리 설정**: `google-a2a-python` 라이브러리 설치 및 기본 설정
 - [X] **7.3. ADK 에이전트 A2A 노출**: 각 ADK 에이전트(예: `CodingAgent`)를 A2A 프로토콜로 호출 가능하도록 A2A 서버 래퍼 구현 (라이브러리 활용)
-- [ ] **7.4. Dispatcher A2A 클라이언트 로직**: 
-    - [ ] Agent Hub `/discover` API 호출 및 검색된 A2A 에이전트(자체 ADK 에이전트 포함)와 통신하는 로직 구현
-    - [ ] A2A Discovery 쿼리 구조화 (능력 기술, 필요한 입출력 형식 등 명시)
-    - [ ] A2A 응답 처리 및 에이전트 선택 로직 구현
+- [X] **7.4. Dispatcher A2A 클라이언트 로직**: 
+    - [X] Agent Hub `/discover` API 호출 및 검색된 A2A 에이전트(자체 ADK 에이전트 포함)와 통신하는 로직 구현
+    - [X] A2A Discovery 쿼리 구조화 (능력 기술, 필요한 입출력 형식 등 명시)
+    - [X] A2A 응답 처리 및 에이전트 선택 로직 구현
 - [ ] **7.5. Agent Card 정의 (`config/agent_cards/`)**: 
     - [ ] 각 에이전트(Coding, QA)의 능력을 상세히 기술한 JSON 파일 생성
     - [ ] Agent Card에는 에이전트 이름, 설명, 지원하는 능력 목록, 입출력 형식, 인증 요구사항 등을 명시

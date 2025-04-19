@@ -24,6 +24,10 @@ from google.adk.events import Event # 수정된 경로
 from google.genai.types import Content, Part # ADK 코드와 일치하는 google.genai.types 경로 사용
 # from typing import AsyncGenerator # typing 모듈에서 가져옴 (이미 위에서 임포트)
 from typing_extensions import override # 수정된 경로
+import httpx # httpx 임포트 추가
+import uuid # task_id 생성을 위해 추가
+from common.types import Task, TaskStatus, TaskState # <<< TaskResult 제거
+# from google_a2a.client import A2AClient # A2A 클라이언트 임포트 (가정) - httpx 직접 사용
 
 # Import the agents to be registered
 from ..agents.coding_agent import CodingAgent
@@ -62,6 +66,9 @@ DEFAULT_INSTRUCTION = (
     # Tool descriptions will be appended dynamically
 )
 
+# Agent Hub URL 설정 (환경 변수 또는 기본값)
+AGENT_HUB_DISCOVER_URL = os.getenv("AGENT_HUB_DISCOVER_URL", "http://localhost:8001/discover") # Agent Hub URL 추가
+
 class JarvisDispatcher(LlmAgent):
     """
     Central dispatcher for the Jarvis AI Framework.
@@ -77,6 +84,7 @@ class JarvisDispatcher(LlmAgent):
     agent_tool_map: Dict[str, List[BaseTool]] = Field(default_factory=dict) # Added agent_tool_map
     current_parsed_input: Optional[ParsedInput] = None
     current_original_language: Optional[str] = None
+    http_client: httpx.AsyncClient = Field(default=None, exclude=True) # HTTP 클라이언트 필드 추가
 
     def __init__(self, **kwargs):
         """
@@ -116,6 +124,10 @@ class JarvisDispatcher(LlmAgent):
 
         # Initialize LLM client for the dispatcher's model
         self._initialize_llm_client(self.model)
+
+        # Initialize HTTP client
+        self.http_client = httpx.AsyncClient() # HTTP 클라이언트 초기화
+        logger.info(f"Initialized httpx.AsyncClient.")
 
         # --- Init Log ---
         logger.info(f"Initialized JarvisDispatcher (as LlmAgent).")
@@ -391,5 +403,117 @@ class JarvisDispatcher(LlmAgent):
               content=Content(parts=[Part(text=result_text)])
               # invocation_id 등 다른 필수 필드가 있다면 추가 필요
          )
+
+    # --- A2A Discovery and Call Methods ---
+    async def _discover_a2a_agents(self, capability: str) -> List[Dict[str, Any]]:
+        """Agent Hub에서 주어진 능력을 가진 에이전트를 검색합니다."""
+        if not self.http_client:
+            logger.error("HTTP client not initialized for A2A discovery.")
+            return []
+        try:
+            logger.info(f"Discovering A2A agents with capability: {capability} from {AGENT_HUB_DISCOVER_URL}")
+            response = await self.http_client.get(AGENT_HUB_DISCOVER_URL, params={"capability": capability})
+            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+            discovered_agents = response.json()
+            logger.info(f"Discovered {len(discovered_agents)} A2A agents.")
+            return discovered_agents
+        except httpx.RequestError as exc:
+            logger.error(f"A2A discovery request failed: {exc}")
+            return []
+        except httpx.HTTPStatusError as exc:
+            logger.error(f"A2A discovery failed with status {exc.response.status_code}: {exc.response.text}")
+            return []
+        except Exception as e:
+            logger.error(f"An unexpected error occurred during A2A discovery: {e}")
+            return []
+
+    async def _call_a2a_agent(self, agent_card: Dict[str, Any], task_input: Any) -> Any:
+        """선택된 A2A 에이전트를 호출합니다. (google-a2a-python 라이브러리 사용)"""
+        agent_name = agent_card.get('name', 'Unknown A2A Agent')
+        agent_endpoint = agent_card.get('a2a_endpoint') # Agent Card에서 엔드포인트 URL 가져오기 (키 이름 확인 필요)
+
+        if not agent_endpoint:
+            logger.error(f"A2A agent '{agent_name}' card does not contain an endpoint URL.")
+            return f"Error: Missing endpoint for A2A agent '{agent_name}'."
+
+        if not self.http_client:
+             logger.error("HTTP client not initialized for A2A call.")
+             return "Error: HTTP client not available."
+
+        task_id = str(uuid.uuid4())
+        # Task 객체 생성 (common.types.Task 모델 사용)
+        try:
+            # 실제 Task 모델에 맞게 수정
+            initial_status = TaskStatus(state=TaskState.SUBMITTED) # TaskStatus 객체 생성
+            a2a_task = Task(
+                id=task_id, # 'id' 필드 사용
+                status=initial_status # 생성된 TaskStatus 객체 할당
+                # task_type 및 input 필드는 Task 모델에 없으므로 제거
+            )
+            task_payload = a2a_task.model_dump() # Pydantic V2의 model_dump() 사용
+        except Exception as e:
+            logger.error(f"Failed to create or serialize A2A Task object: {e}")
+            import traceback
+            traceback.print_exc() # 디버깅을 위해 스택 트레이스 추가
+            return f"Error: Internal error preparing A2A task for '{agent_name}'."
+
+
+        try:
+            logger.info(f"Calling A2A agent '{agent_name}' at {agent_endpoint} with task_id: {task_id}")
+            # google-a2a-python 라이브러리가 자체 클라이언트를 제공하지 않는 경우 httpx 사용
+            # 여기서는 httpx를 사용하여 POST 요청을 보낸다고 가정
+            response = await self.http_client.post(
+                agent_endpoint,
+                json=task_payload, # 직렬화된 Task 객체 사용
+                timeout=60.0 # 타임아웃 설정 (적절히 조정)
+            )
+            response.raise_for_status()
+
+            # 응답을 TaskResult 객체로 파싱 (또는 Task 객체 업데이트)
+            result_data = response.json()
+            # Pydantic 모델이라고 가정하고 .parse_obj() 사용 - model_validate 사용 권장
+            # task_response = Task.parse_obj(result_data) # <<< Task 객체로 파싱
+            task_response = Task.model_validate(result_data) # Pydantic V2의 model_validate 사용
+
+            logger.info(f"Received task response from A2A agent '{agent_name}' with status: {task_response.status.state}") # <<< Task 상태 로깅
+
+            if task_response.status.state == TaskState.COMPLETED: # <<< Task 상태 확인
+                # 결과 추출 로직: artifacts 리스트의 첫 번째 artifact의 첫 번째 text part를 반환 (예시)
+                if task_response.artifacts and task_response.artifacts[0].parts:
+                    first_part = task_response.artifacts[0].parts[0]
+                    # Check if the part is a TextPart before accessing .text
+                    if hasattr(first_part, 'text'): 
+                        return first_part.text
+                    elif hasattr(first_part, 'data'): # Handle DataPart if necessary
+                         logger.warning(f"A2A task from '{agent_name}' completed with DataPart, returning as string.")
+                         return str(first_part.data)
+                logger.warning(f"A2A task from '{agent_name}' completed but no suitable output artifact found.")
+                return f"A2A task '{agent_name}' completed without text output."
+            else:
+                # error_message = task_result.error or f"Task failed with status {task_result.status}" # <<< TaskResult 대신 Task 상태 사용
+                error_message = f"Task failed with status {task_response.status.state}" # <<< Task 상태 기반 오류 메시지
+                # 실패 시 Task 상태 메시지 포함 (존재하는 경우)
+                if task_response.status.message and task_response.status.message.parts:
+                    first_part = task_response.status.message.parts[0]
+                    # Check if the part is a TextPart before accessing .text
+                    if hasattr(first_part, 'text'):
+                         error_message += f": {first_part.text}"
+
+                logger.error(f"A2A task failed for agent '{agent_name}': {error_message}")
+                return f"Error from A2A agent '{agent_name}': {error_message}"
+
+        except httpx.RequestError as exc:
+            logger.error(f"A2A call request to '{agent_name}' failed: {exc}")
+            return f"Error: Failed to connect to A2A agent '{agent_name}'."
+        except httpx.HTTPStatusError as exc:
+            logger.error(f"A2A call to '{agent_name}' failed with status {exc.response.status_code}: {exc.response.text}")
+            return f"Error: A2A agent '{agent_name}' returned status {exc.response.status_code}."
+        except Exception as e:
+            # Pydantic validation error 등 포함
+            logger.error(f"An unexpected error occurred during A2A call to '{agent_name}': {e}")
+            import traceback
+            traceback.print_exc() # 디버깅을 위해 스택 트레이스 추가
+            return f"Error: Unexpected error during communication with A2A agent '{agent_name}'."
+    # --- End A2A Methods ---
 
 # Type alias 등은 BaseAgent와 호환되도록 확인/수정 필요 (현재 코드에서는 직접 사용 안함) 

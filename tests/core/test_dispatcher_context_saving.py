@@ -175,4 +175,39 @@ class TestDispatcherContextSaving:
             original_lang
         )
         # Also verify context saving happened (implicitly tests that response generation was attempted)
-        test_dispatcher.context_manager.add_message.assert_called_once() 
+        test_dispatcher.context_manager.add_message.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_final_event_content(self, test_dispatcher, mock_invocation_context):
+        """Tests if the final yielded Event contains the text from response_generator."""
+        user_input = mock_invocation_context.user_input
+        processed_by_generator = "Final Processed Response (Possibly Translated)"
+        original_lang = "ko"
+
+        # Configure mocks
+        test_dispatcher._mock_process_request_return = "Raw result from agent"
+        test_dispatcher.current_original_language = original_lang
+        # Mock generate_response to return a specific value
+        test_dispatcher.response_generator.generate_response = AsyncMock(return_value=processed_by_generator)
+
+        # Run the implementation
+        generator = test_dispatcher._run_async_impl(mock_invocation_context)
+        events = [event async for event in generator]
+
+        # Assertions
+        assert len(events) == 1
+        # Verify the text content of the yielded event
+        assert events[0].content.parts[0].text == processed_by_generator
+
+        # Verify generate_response was called (as a prerequisite)
+        test_dispatcher.response_generator.generate_response.assert_called_once_with(
+            "Raw result from agent",
+            original_lang
+        )
+        # Verify context was saved with the final response text
+        test_dispatcher.context_manager.add_message.assert_called_once_with(
+            session_id=mock_invocation_context.session.id,
+            user_input=user_input,
+            ai_response=processed_by_generator, # Should save the text that was yielded
+            original_language=original_lang
+        ) 

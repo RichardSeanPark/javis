@@ -310,6 +310,7 @@
 
 ## 6.4. Dispatcher 연동 테스트 (`src/jarvis/core/dispatcher.py`)
 - [X] **ResponseGenerator 호출 테스트 (Mock)**: `_run_async_impl`에서 최종 응답 생성 시, `response_generator.generate_response`가 올바른 결과(`final_response_message`)와 원본 언어(`current_original_language`)를 인자로 받아 호출되는지 확인.
+- [X] **최종 응답 이벤트 반환 테스트 (Mock)**: `_run_async_impl`이 yield하는 최종 `Event`의 `content.parts[0].text`가 `response_generator.generate_response`의 (Mock) 반환값과 일치하는지 확인.
 
 ## 7. 에이전트 간 상호작용 (A2A) 테스트
 

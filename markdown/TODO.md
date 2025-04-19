@@ -193,7 +193,7 @@
     - [X] 번역 시 ISO 639-1 언어 코드 사용 (예: 'ko', 'en', 'ja')
     - [X] 번역된 텍스트 또는 원본 영어 텍스트를 최종 반환값으로 설정
 - [-] **6.4. Dispatcher 연동**: `src/jarvis/core/dispatcher.py` 에서 `ResponseGenerator` 사용
-    - [-] 하위 에이전트로부터 결과 수신 후, `ResponseGenerator.generate_response()` 호출 (영어 결과와 원본 언어 전달)
+    - [X] 하위 에이전트로부터 결과 수신 후, `ResponseGenerator.generate_response()` 호출 (영어 결과와 원본 언어 전달)
     - [-] 최종 번역된 응답을 사용자 인터페이스로 반환
 - [X] **6.5. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .response_generator import ResponseGenerator` 추가
 

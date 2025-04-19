@@ -146,4 +146,33 @@ class TestDispatcherContextSaving:
         )
         # Check logs for the generation error
         assert "Error during final response generation" in caplog.text
-        assert "Simulated generation error" in caplog.text 
+        assert "Simulated generation error" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_response_generator_called_correctly(self, test_dispatcher, mock_invocation_context):
+        """Tests if response_generator.generate_response is called with correct args."""
+        user_input = mock_invocation_context.user_input
+        direct_response = "Direct response from process_request"
+        original_lang = "ja"
+
+        # Configure mocks
+        test_dispatcher._mock_process_request_return = direct_response
+        test_dispatcher.current_original_language = original_lang
+        # Mock the generate_response method on the *instance* to check its call
+        test_dispatcher.response_generator.generate_response = AsyncMock(return_value="Mocked Final Response")
+
+        # Run the implementation
+        generator = test_dispatcher._run_async_impl(mock_invocation_context)
+        events = [event async for event in generator]
+
+        # Assertions
+        assert len(events) == 1
+        assert events[0].content.parts[0].text == "Mocked Final Response"
+
+        # Verify the call to generate_response
+        test_dispatcher.response_generator.generate_response.assert_called_once_with(
+            direct_response, # Should be called with the result from process_request
+            original_lang
+        )
+        # Also verify context saving happened (implicitly tests that response generation was attempted)
+        test_dispatcher.context_manager.add_message.assert_called_once() 

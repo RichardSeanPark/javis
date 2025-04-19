@@ -308,6 +308,9 @@
 - [X] **리스트 입력 테스트**: `english_result`가 리스트(`[1, 2, 3]`)일 때, `str()` 변환 결과(`'[1, 2, 3]'`)가 반환되는지 확인 (`original_language='en'`).
 - [X] **문자열 변환 오류 테스트**: `english_result` 객체의 `__str__` 메서드가 예외를 발생시키도록 Mocking 했을 때, "I encountered an issue processing the result." 메시지가 반환되는지 확인.
 
+## 6.4. Dispatcher 연동 테스트 (`src/jarvis/core/dispatcher.py`)
+- [X] **ResponseGenerator 호출 테스트 (Mock)**: `_run_async_impl`에서 최종 응답 생성 시, `response_generator.generate_response`가 올바른 결과(`final_response_message`)와 원본 언어(`current_original_language`)를 인자로 받아 호출되는지 확인.
+
 ## 7. 에이전트 간 상호작용 (A2A) 테스트
 
 ### 7.1. Agent Hub 서버 테스트 (`src/jarvis/interfaces/agent_hub/server.py`)
@@ -360,3 +363,134 @@
     - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
     - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
     - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.4. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.5. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.6. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.7. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.8. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.9. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.10. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+
+### 7.11. Dispatcher A2A 클라이언트 로직 테스트 (`src/jarvis/core/dispatcher.py`)
+*   **`_discover_a2a_agents` 메서드 테스트 (Mock httpx)**
+    - [X] `httpx.AsyncClient.get`이 성공적으로 호출되고, 올바른 Agent Hub URL과 `capability` 쿼리 파라미터가 사용되는지 확인
+    - [X] Agent Hub가 성공적인 응답(예: Agent Card 리스트 JSON)을 반환할 때, 해당 리스트가 파싱되어 반환되는지 확인
+    - [X] Agent Hub가 빈 리스트(`[]`)를 반환할 때, 빈 리스트가 그대로 반환되는지 확인
+    - [X] Agent Hub 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+    - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
+*   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
+    - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인

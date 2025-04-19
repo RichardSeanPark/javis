@@ -7,28 +7,34 @@ authors = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = "^3.11"
-dependencies = [
-    "fastapi (>=0.115)",
-    "pydantic (>=2.11)",
-    "uvicorn (>=0.34)",
-    "langdetect (>=1.0.9)",
-    "pytest (>=8.3)",
-    "httpx (>=0.28)",
-    "googletrans-py (>=4.0.0rc1)",
-    "google-adk (>=0.1.0,<0.2.0)",
-    "google-cloud-aiplatform (>=1.89.0,<2.0.0)",
-    "python-dotenv (>=1.1)",
-    "google-genai (>=1.0)",
-    "duckduckgo-search (>=8.0.1,<9.0.0)"
-]
 
 [project.scripts]
 run-api = "javis.scripts.run_api:main"
 run-agent-hub = "src.jarvis.interfaces.agent_hub.server:app"
 
+[tool.poetry.dependencies]
+python = ">=3.12,<3.14"
+fastapi = ">=0.115"
+pydantic = ">=2.11"
+uvicorn = {extras = ["standard"], version = ">=0.34"}
+langdetect = ">=1.0.9"
+pytest = {version = ">=8.3", optional = true}
+httpx = ">=0.28"
+googletrans-py = ">=4.0.0rc1"
+google-adk = ">=0.1.0,<0.2.0"
+google-cloud-aiplatform = ">=1.89.0,<2.0.0"
+python-dotenv = ">=1.1"
+google-genai = ">=1.0"
+duckduckgo-search = ">=8.0.1,<9.0.0"
+a2a_samples = {path = "google-a2a/samples/python", develop=true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.3"
+pytest-mock = ">=3.14"
+pytest-asyncio = "^0.26.0"
+
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
@@ -38,8 +44,4 @@ pythonpath = [
 testpaths = [
     "tests",
 ]
-
-[tool.poetry.group.dev.dependencies]
-pytest-mock = ">=3.14"
-pytest-asyncio = "^0.26.0"
 

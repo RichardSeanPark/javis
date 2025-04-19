@@ -363,82 +363,15 @@ class TestJarvisDispatcherReal:
 
     @pytest.mark.asyncio
     async def test_a2a_placeholder_entry_on_no_agent_mocked(self, real_dispatcher, caplog):
-        """
-        ### 3.3.3 Test Case: A2A 플레이스홀더 진입 테스트 (Mock)
-        디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고,
-        process_request 실행 시 A2A 플레이스홀더 블록 내의 로그가 출력되는지 확인.
-        """
-        # Set log level to capture info messages
-        caplog.set_level(logging.INFO)
-        dispatcher = real_dispatcher
-
-        # Mock the InputParserAgent to return a predictable ParsedInput
-        mock_parsed_input = ParsedInput(
-            original_text="Some ambiguous request",
-            original_language="en",
-            english_text="Some ambiguous request",
-            intent=None, entities=None, domain=None
-        )
-        # Use patch with the full class path instead of patch.object
-        with patch('src.jarvis.components.input_parser.InputParserAgent.process_input', new_callable=AsyncMock, return_value=mock_parsed_input):
-            # --- Corrected Mocking ---
-            mock_llm_client_instance = MagicMock(spec=genai.Client) # Use MagicMock for easier attribute setting
-            mock_aio_attr = AsyncMock()
-            mock_models_attr = AsyncMock()
-            mock_generate_content_method = AsyncMock(return_value=AsyncMock(text="NO_AGENT")) # Mock the response object directly
-
-            mock_models_attr.generate_content = mock_generate_content_method
-            mock_aio_attr.models = mock_models_attr
-            mock_llm_client_instance.aio = mock_aio_attr
-            # --- End Corrected Mocking ---
-
-            # Use patch with the full class path for get_llm_client
-            with patch('src.jarvis.core.dispatcher.JarvisDispatcher.get_llm_client', return_value=mock_llm_client_instance) as mock_get_client:
-                await dispatcher.process_request("Some ambiguous request")
-                # Assertions
-                mock_get_client.assert_called_once_with(dispatcher.model)
-                mock_generate_content_method.assert_called_once() # Assert on the final mocked method
-                assert "No suitable internal agent found via LLM. Attempting A2A Discovery (Placeholder)." in caplog.text, \
-                    "Log message for A2A placeholder check not found."
+        # 이 테스트는 mock_dispatcher_and_deps 를 사용하도록 위에서 분리되었으므로 여기서는 제거하거나
+        # 실제 API 호출 기반의 다른 시나리오 테스트로 변경해야 합니다.
+        # 여기서는 우선 pass 처리하거나 제거하는 것이 Mock 테스트와의 중복을 피합니다.
+        pass # Or remove this test method from TestJarvisDispatcherReal
 
     @pytest.mark.asyncio
     async def test_a2a_placeholder_return_message_mocked(self, real_dispatcher):
-        """
-        ### 3.3.3 Test Case: A2A 플레이스홀더 후 반환 메시지 테스트 (Mock)
-        디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고,
-        process_request가 최종적으로 올바른 메시지를 반환하는지 확인.
-        """
-        dispatcher = real_dispatcher
-
-        # Mock the InputParserAgent
-        mock_parsed_input = ParsedInput(
-            original_text="Another ambiguous request",
-            original_language="en",
-            english_text="Another ambiguous request",
-            intent=None, entities=None, domain=None
-        )
-        # Use patch with the full class path instead of patch.object
-        with patch('src.jarvis.components.input_parser.InputParserAgent.process_input', new_callable=AsyncMock, return_value=mock_parsed_input):
-             # --- Corrected Mocking ---
-            mock_llm_client_instance = MagicMock(spec=genai.Client)
-            mock_aio_attr = AsyncMock()
-            mock_models_attr = AsyncMock()
-            mock_generate_content_method = AsyncMock(return_value=AsyncMock(text="NO_AGENT"))
-
-            mock_models_attr.generate_content = mock_generate_content_method
-            mock_aio_attr.models = mock_models_attr
-            mock_llm_client_instance.aio = mock_aio_attr
-            # --- End Corrected Mocking ---
-
-            # Use patch with the full class path for get_llm_client
-            with patch('src.jarvis.core.dispatcher.JarvisDispatcher.get_llm_client', return_value=mock_llm_client_instance) as mock_get_client:
-                final_message = await dispatcher.process_request("Another ambiguous request")
-                # Assertions
-                mock_get_client.assert_called_once_with(dispatcher.model)
-                mock_generate_content_method.assert_called_once()
-                expected_message = "No suitable internal or external agent found to handle the request."
-                assert final_message == expected_message, \
-                    f"Expected final message '{expected_message}', but got '{final_message}'"
+        # 위와 동일한 이유로 제거 또는 pass 처리
+        pass # Or remove this test method from TestJarvisDispatcherReal
 
 # --- Tool Registry and Injection Tests (Step 5.2) ---
 # These tests are now correctly placed outside the class
@@ -929,4 +862,111 @@ async def test_process_request_handles_call_error(mock_dispatcher, mocker, caplo
     mock_call_a2a.assert_not_called()
     # Assert the final message indicates no agent found (because A2A is placeholder)
     assert "No suitable internal or external agent found" in result
+
+# Fixture for mocked dispatcher and dependencies
+@pytest.fixture
+def mock_dispatcher_and_deps(mocker):
+    """Creates a mocked JarvisDispatcher and mocks its dependencies."""
+    # Mock InputParserAgent and its process_input method
+    mock_input_parser = MagicMock(spec=InputParserAgent)
+    mock_parsed_input = ParsedInput(
+        original_text="test query",
+        original_language="en",
+        english_text="test query",
+        intent="test_intent",
+        entities={"test_entity": "value"},
+        domain="test_domain"
+    )
+    mock_input_parser.process_input = AsyncMock(return_value=mock_parsed_input)
+
+    # Mock LLM client generation
+    mock_llm_client = MagicMock()
+    # Configure the mock client's async generate_content method
+    # This will be the default response unless overridden in a test
+    mock_llm_response = MagicMock(spec=GenerateContentResponse)
+    mock_llm_response.text = "NO_AGENT" # Default to no agent
+    mock_llm_client.aio.models.generate_content = AsyncMock(return_value=mock_llm_response)
+
+    # Mock httpx.AsyncClient
+    mock_http_client = MagicMock(spec=httpx.AsyncClient)
+    mock_http_client.get = AsyncMock()
+    mock_http_client.post = AsyncMock()
+
+    # Patch the __init__ method to inject mocks and skip real init logic
+    with patch("src.jarvis.core.dispatcher.InputParserAgent", return_value=mock_input_parser),\
+         patch("src.jarvis.core.dispatcher.JarvisDispatcher._initialize_llm_client", return_value=None),\
+         patch("src.jarvis.core.dispatcher.httpx.AsyncClient", return_value=mock_http_client) as mock_async_client_class:
+
+        # Instantiate the dispatcher - __init__ will use the patched versions
+        dispatcher = JarvisDispatcher(model="mock-model")
+
+        # Manually assign mocks created above where needed
+        dispatcher.input_parser = mock_input_parser
+        dispatcher.llm_clients = {"mock-model": mock_llm_client} # Manually set the client for the mock model
+        dispatcher.http_client = mock_http_client
+
+        # Mock the _discover_a2a_agents method itself
+        dispatcher._discover_a2a_agents = AsyncMock(return_value=[]) # Default to finding no agents
+
+    return dispatcher, mock_input_parser, mock_llm_client, mock_http_client
+
+@pytest.mark.asyncio
+async def test_a2a_placeholder_entry_on_no_agent_mocked(mock_dispatcher_and_deps, caplog):
+    """디스패처 LLM이 NO_AGENT 반환 시 A2A 검색 로그가 출력되는지 확인 (Mock)"""
+    dispatcher, _, mock_llm_client, _ = mock_dispatcher_and_deps # Use mocked fixture
+    caplog.set_level(logging.INFO)
+
+    # Configure LLM mock to return "NO_AGENT"
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+
+    await dispatcher.process_request("some query")
+
+    # Check logs for the A2A attempt message
+    assert "Attempting A2A agent discovery..." in caplog.text
+
+@pytest.mark.asyncio
+async def test_a2a_discover_called_with_capability_mocked(mock_dispatcher_and_deps):
+    """NO_AGENT 시 _discover_a2a_agents가 올바른 capability로 호출되는지 확인 (Mock)"""
+    dispatcher, mock_input_parser, mock_llm_client, _ = mock_dispatcher_and_deps # Use mocked fixture
+
+    # Configure LLM mock to return "NO_AGENT"
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+
+    # Configure mock parsed input
+    mock_parsed_input = ParsedInput(
+        original_text="query", original_language="en", english_text="query",
+        intent="specific_intent", domain="specific_domain", entities={}
+    )
+    mock_input_parser.process_input.return_value = mock_parsed_input
+
+    # Call the method under test
+    await dispatcher.process_request("some query")
+
+    # Assert that _discover_a2a_agents was called once with the correct capability string
+    expected_capability = "Handle intent 'specific_intent' in domain 'specific_domain'"
+    dispatcher._discover_a2a_agents.assert_called_once_with(expected_capability)
+
+@pytest.mark.asyncio
+async def test_a2a_placeholder_return_message_mocked(mock_dispatcher_and_deps):
+    """NO_AGENT이고 A2A 검색 결과 없을 시 최종 메시지 확인 (Mock)"""
+    dispatcher, _, mock_llm_client, _ = mock_dispatcher_and_deps # Use mocked fixture
+
+    # Configure LLM mock to return "NO_AGENT"
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+
+    # Ensure _discover_a2a_agents returns an empty list (default in fixture)
+    dispatcher._discover_a2a_agents.return_value = []
+
+    final_response = await dispatcher.process_request("some query")
+
+    # Check the final response message (Update expected message)
+    expected_message = "I cannot find a suitable agent to handle your request at this time."
+    assert final_response == expected_message, \
+           f"Expected final message \'{expected_message}\', but got \'{final_response}\'"
  

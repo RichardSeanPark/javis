@@ -76,25 +76,29 @@ def test_dependencies_installation():
     try:
         pyproject_content = toml.load('pyproject.toml')
         dependencies = []
-        
-        # 패키지명만 추출 (버전 정보 제외)
-        if 'dependencies' in pyproject_content.get('project', {}):
-            for dep in pyproject_content['project']['dependencies']:
-                # 패키지명만 추출 (버전 정보 제외)
-                if ' ' in dep:
-                    dep_name = dep.split(' ')[0].lower()
-                else:
-                    dep_name = dep.lower()
-                dependencies.append(dep_name)
-                
+        dev_dependencies = []
+
+        # Основные зависимости
+        if 'dependencies' in pyproject_content.get('tool', {}).get('poetry', {}):
+            for dep_name, dep_details in pyproject_content['tool']['poetry']['dependencies'].items():
+                dependencies.append(dep_name.lower())
+
+        # Зависимости для разработки
+        if 'dev' in pyproject_content.get('tool', {}).get('poetry', {}).get('group', {}):
+             if 'dependencies' in pyproject_content['tool']['poetry']['group']['dev']:
+                for dep_name, dep_details in pyproject_content['tool']['poetry']['group']['dev']['dependencies'].items():
+                     dev_dependencies.append(dep_name.lower())
+
         # 필수 패키지가 의존성 목록에 있는지 확인 (대소문자 구분 없이)
+        all_deps = dependencies + dev_dependencies # dev 의존성도 포함하여 확인
         for package in required_packages:
             # uvicorn[standard]의 경우 uvicorn으로 확인
-            if package.startswith('uvicorn'):
-                package = 'uvicorn'
-            assert package.lower() in dependencies or any(package.lower() in dep.lower() for dep in dependencies), \
+            pkg_lower = package.lower()
+            if pkg_lower.startswith('uvicorn'):
+                pkg_lower = 'uvicorn'
+            assert pkg_lower in all_deps, \
                 f"{package} 패키지가 pyproject.toml의 의존성 목록에 없습니다."
-                
+
     except Exception as e:
         pytest.fail(f"pyproject.toml 파일 읽기 또는 의존성 확인 실패: {e}")
 

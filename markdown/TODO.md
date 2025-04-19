@@ -86,7 +86,8 @@
 - [X] **2.6. `ParsedInput` 객체 생성 및 반환 (`process_input` 메서드 내)**
     - [X] 수집된 정보 (`original_text`, `original_language`, `english_text`, `intent`, `entities`, `domain`)를 사용하여 `ParsedInput` 객체 인스턴스화
     - [X] 생성된 `ParsedInput` 객체 반환
-- [-] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**: `from .input_parser import InputParserAgent` 추가 (및 관련 통합 테스트)
+- [X] **2.7. 모듈 등록 (`src/jarvis/components/__init__.py`)**
+    - [X] `from .input_parser import InputParserAgent` 추가 (및 관련 통합 테스트)
 
 ## 3. 에이전트 라우팅 계층 (MCP/Dispatcher) (`src/jarvis/core/dispatcher.py`)
 
@@ -107,7 +108,9 @@
         - [X] **3.3.1. 규칙 기반 라우팅 구현**: `ParsedInput.intent` 또는 `ParsedInput.domain` 기반으로 특정 키를 가진 `self.sub_agents`를 직접 선택하는 조건문 추가 (초기 단계)
         - [X] **3.3.2. ADK 자동 위임 설정**: \
             * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)\n            * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 하위 에이전트에 위임하도록 설정\n            * 디스패처의 `instruction`에 라우팅 가이드라인 추가 (예: \"Route the user\'s request based on the following specialized agents: ...\")\n            * ADK의 자동 위임 기능을 활용하여 LLM이 자연스럽게 적합한 하위 에이전트를 선택하도록 함 (Live API 테스트 포함)
-         - [-] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):\n            *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)\n            *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄
+         - [-] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):
+            *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)
+            *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄
             *   검색된 A2A 에이전트의 Agent Card를 평가하여 최적의 에이전트 선택
             *   선택된 A2A 에이전트 호출 로직 구현 (A2A 프로토콜 메시지 구성 및 전송)
 - [-] **3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입**

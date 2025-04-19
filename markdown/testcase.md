@@ -156,8 +156,9 @@
 - [X] **위임 실패 테스트 (적절한 에이전트 없음)**: 등록된 에이전트가 처리할 수 없는 요청 시, 디스패처 LLM이 "NO_AGENT" 또는 관련 없는 에이전트 이름을 반환하고, 최종 응답 문자열에 "No suitable agent found"가 포함되는지 확인 (Live API)
 
 ### 3.3.3. A2A 동적 검색 로직 테스트 (Placeholder)
-- [X] **A2A 플레이스홀더 진입 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request` 실행 시 A2A 플레이스홀더 블록 내의 로그("Checking A2A Hub (Placeholder)")가 출력되는지 확인.
-- [X] **A2A 플레이스홀더 후 반환 메시지 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request`가 최종적으로 "No suitable internal or external agent found to handle the request." 메시지를 반환하는지 확인.
+- [X] **A2A 플레이스홀더 진입 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request` 실행 시 A2A 플레이스홀더 블록 내의 로그("Attempting A2A agent discovery...")가 출력되는지 확인.
+- [X] **`_discover_a2a_agents` 호출 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `_discover_a2a_agents` 메서드가 올바른 `capability` 문자열과 함께 호출되는지 확인 (Mock `_discover_a2a_agents` 사용).
+- [X] **A2A 플레이스홀더 후 반환 메시지 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하고 `_discover_a2a_agents`가 빈 리스트를 반환하도록 Mocking했을 때, `process_request`가 최종적으로 "I cannot find a suitable agent..." 메시지를 반환하는지 확인.
 - [-] **A2A 실제 검색/호출 테스트**: (7.4에서 상세 테스트)
 
 ### 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입 테스트

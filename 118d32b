@@ -1,0 +1,14 @@
+[33mcommit 118d32bc99687c4272e52349ed6b4d91ad4f424b[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: RichardSeanPark <jhbum01@gmail.com>
+Date:   Sat Apr 19 18:40:00 2025 +0900
+
+    feat: Implement LLM summarization for web search tool
+
+ markdown/TODO.md                        |   2 [32m+[m[31m-[m
+ markdown/testcase.md                    |   6 [32m+[m[31m-[m
+ pyproject.toml                          |  10 [32m+[m[31m-[m
+ src/jarvis/core/dispatcher.py           | 750 [32m++++++++++++++++++++++++++[m[31m-------------------------[m
+ src/jarvis/tools/code_execution_tool.py | 115 [32m++[m[31m------[m
+ tests/tools/test_code_execution_tool.py | 123 [32m++++[m[31m-----[m
+ tests/tools/test_web_search_tool.py     | 240 [32m++++++[m[31m-----------[m
+ 7 files changed, 553 insertions(+), 693 deletions(-)

@@ -187,7 +187,7 @@
     - [X] `__init__` 메서드: 번역 툴 인스턴스화 (또는 외부에서 주입받기)
     - [X] `generate_response(english_result: Any, original_language: str) -> str` 메서드 정의
 - [X] **6.2. 결과 처리 및 포맷팅 (`generate_response` 메서드 내)**
-    - [-] 입력받은 `english_result` (텍스트, JSON 등)를 사용자 친화적 텍스트로 변환/요약 (필요시 LLM 추가 호출) # 기본 포맷팅만 구현
+    - [X] 입력받은 `english_result` (텍스트, JSON 등)를 사용자 친화적 텍스트로 변환/요약 (필요시 LLM 추가 호출) # 기본 포맷팅만 구현
 - [X] **6.3. 최종 응답 번역 (`generate_response` 메서드 내)**
     - [X] `original_language`가 'en'이 아닌 경우, 포맷팅된 영어 응답 텍스트를 `original_language`로 번역 (번역 툴 호출)
     - [X] 번역 시 ISO 639-1 언어 코드 사용 (예: 'ko', 'en', 'ja')

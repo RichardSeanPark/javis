@@ -300,8 +300,13 @@
 - [X] **generate_response None 입력 처리**: `generate_response(english_result=None, original_language='en')` 호출 시 "I received an empty response..." 메시지를 반환하는지 확인.
 - [X] **generate_response 비문자열 입력 처리**: `generate_response(english_result={"key": "value"}, original_language='en')` 호출 시 `str({"key": "value"})` 결과(`'{'key': 'value'}'`)를 반환하는지 확인.
 - [X] **Dispatcher -> ResponseGenerator 호출 테스트 (Mock)**: `JarvisDispatcher._run_async_impl`에서 직접 응답 문자열(예: "처리 불가")을 반환해야 할 때, `response_generator.generate_response`가 해당 문자열과 `current_original_language`를 인자로 받아 호출되는지 확인 (Mock `response_generator`).
-- [-] (향후 구현) 결과 포맷팅 로직 테스트 (LLM 호출 등)
-- [-] (향후 구현) 실제 번역 테스트 (Live API 또는 Mock `translate_tool` 활용)
+
+### 6.2.1. 결과 처리 및 포맷팅 테스트 (`generate_response`)
+- [X] **문자열 입력 테스트**: `english_result`가 일반 문자열일 때, 해당 문자열이 그대로 반환되는지 확인 (`original_language='en'`).
+- [X] **None 입력 테스트**: `english_result`가 `None`일 때, "I received an empty response..." 메시지가 반환되는지 확인.
+- [X] **딕셔너리 입력 테스트**: `english_result`가 딕셔너리(`{"key": "value"}`)일 때, `str()` 변환 결과(`'{'key': 'value'}'`)가 반환되는지 확인 (`original_language='en'`).
+- [X] **리스트 입력 테스트**: `english_result`가 리스트(`[1, 2, 3]`)일 때, `str()` 변환 결과(`'[1, 2, 3]'`)가 반환되는지 확인 (`original_language='en'`).
+- [X] **문자열 변환 오류 테스트**: `english_result` 객체의 `__str__` 메서드가 예외를 발생시키도록 Mocking 했을 때, "I encountered an issue processing the result." 메시지가 반환되는지 확인.
 
 ## 7. 에이전트 간 상호작용 (A2A) 테스트
 

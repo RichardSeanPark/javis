@@ -1,11 +1,15 @@
 # tests/components/test_response_generator.py
 import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 from src.jarvis.components.response_generator import ResponseGenerator
+import logging
+
+logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def response_generator():
     """Provides a ResponseGenerator instance for testing."""
+    # No complex dependencies to mock for basic formatting tests yet
     return ResponseGenerator()
 
 # --- Test Cases from markdown/testcase.md Section 6 ---
@@ -81,3 +85,81 @@ async def test_generate_response_empty_string_input(response_generator):
 #         mock_translate.assert_called_once()
 #         # Expect fallback to English
 #         assert final_response == result 
+
+@pytest.mark.asyncio
+async def test_generate_response_string_input(response_generator):
+    """Tests generate_response with a simple string input (English)."""
+    english_result = "This is a test response."
+    original_language = "en"
+    expected_response = english_result
+    
+    actual_response = await response_generator.generate_response(english_result, original_language)
+    
+    assert actual_response == expected_response
+
+@pytest.mark.asyncio
+async def test_generate_response_none_input(response_generator):
+    """Tests generate_response with None input."""
+    english_result = None
+    original_language = "en"
+    expected_response = "I received an empty response from the agent."
+    
+    actual_response = await response_generator.generate_response(english_result, original_language)
+    
+    assert actual_response == expected_response
+
+@pytest.mark.asyncio
+async def test_generate_response_dict_input(response_generator):
+    """Tests generate_response with a dictionary input (English)."""
+    english_result = {"key": "value", "number": 123}
+    original_language = "en"
+    # Expect the standard string representation of the dict
+    expected_response = str(english_result)
+    
+    actual_response = await response_generator.generate_response(english_result, original_language)
+    
+    assert actual_response == expected_response
+
+@pytest.mark.asyncio
+async def test_generate_response_list_input(response_generator):
+    """Tests generate_response with a list input (English)."""
+    english_result = [1, "two", 3.0]
+    original_language = "en"
+    # Expect the standard string representation of the list
+    expected_response = str(english_result)
+    
+    actual_response = await response_generator.generate_response(english_result, original_language)
+    
+    assert actual_response == expected_response
+
+# Helper class for testing string conversion error
+class Unstringable:
+    def __str__(self):
+        raise TypeError("Cannot convert this object to string")
+
+@pytest.mark.asyncio
+async def test_generate_response_str_conversion_error(response_generator, caplog):
+    """Tests generate_response when str() conversion fails."""
+    english_result = Unstringable() # An object whose __str__ raises an error
+    original_language = "en"
+    expected_response = "I encountered an issue processing the result."
+    
+    actual_response = await response_generator.generate_response(english_result, original_language)
+    
+    assert actual_response == expected_response
+    # Check if the error was logged
+    assert "Error converting agent result to string" in caplog.text
+    assert "Cannot convert this object to string" in caplog.text
+
+# Test for placeholder translation note (can be removed/modified when translation is implemented)
+@pytest.mark.asyncio
+async def test_generate_response_translation_placeholder(response_generator):
+    """Tests that the placeholder translation note is added for non-English."""
+    english_result = "Test result"
+    original_language = "ko" # Non-English
+    expected_prefix = "(In English, as translation is not yet implemented):"
+    
+    actual_response = await response_generator.generate_response(english_result, original_language)
+    
+    assert actual_response.startswith(expected_prefix)
+    assert english_result in actual_response 

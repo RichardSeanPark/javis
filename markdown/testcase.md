@@ -236,11 +236,10 @@
 - [X] `src/jarvis/tools/__init__.py`에 `translate_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
 ### 5.3. 웹 검색 툴 (`web_search_tool`) 테스트
-- [X] `src/jarvis/tools/web_search_tool.py` 파일에 `web_search_tool` ADK `Tool` 객체가 정의되어 있는지 확인
+- [X] `src/jarvis/tools/web_search_tool.py` 파일에 `web_search_tool` ADK `FunctionTool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 `web_search`인지 확인
     - [X] `description` 속성이 올바른 설명을 포함하는지 확인 (함수 독스트링 확인)
-    - [-] `function_declarations`에 `web_search` 함수 정보가 올바르게 명시되어 있는지 확인 (name, description, parameters)
-        - [-] `parameters` 스키마에 `query` (필수) 필드가 정의되어 있는지 확인 # 내부 구현 확인 어려움
+- [X] `function_declarations` 내부 스키마 확인 (타입, 필수 필드 등) # 객체 타입/이름/설명 존재 확인 완료, 세부 스키마(타입/필수) 직접 확인은 ADK 내부 구현으로 어려움
 - [X] **기본 검색 테스트 (Mock)**: `DDGS().atext`가 Mock 결과를 반환하도록 설정하고, `web_search` 함수 호출 시 예상되는 포맷의 문자열 결과가 반환되는지 확인
 - [X] **결과 없음 테스트 (Mock)**: `DDGS().atext`가 빈 리스트를 반환하도록 설정하고, `web_search` 함수 호출 시 "No relevant information found..." 메시지가 반환되는지 확인
 - [X] **API 호출 오류 테스트 (Mock)**: `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인

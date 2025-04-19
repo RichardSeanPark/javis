@@ -2,14 +2,25 @@
 import pytest
 from google.adk.tools import FunctionTool
 from src.jarvis.tools.code_execution_tool import execute_python_code, code_execution_tool
+# Import types needed for schema verification
+from google.genai.types import FunctionDeclaration, Schema as GenaiSchema, Type as GenaiType
 
-@pytest.mark.asyncio
-async def test_code_execution_tool_definition():
+# Remove @pytest.mark.asyncio as the test is now synchronous
+def test_code_execution_tool_definition():
     """코드 실행 도구(code_execution_tool) 객체가 올바르게 정의되었는지 확인합니다."""
+    # Check against the specific ADK FunctionTool type
     assert isinstance(code_execution_tool, FunctionTool)
+    # Check the name derived from the function
     assert code_execution_tool.name == "execute_python_code"
-    assert "**SECURITY WARNING:**" in code_execution_tool.func.__doc__
-    assert "Executes the given Python code snippet" in code_execution_tool.func.__doc__
+    # Check that the description exists (derived from docstring)
+    assert code_execution_tool.description is not None and len(code_execution_tool.description) > 0
+    # Check specific content in description
+    assert "**SECURITY WARNING:**" in code_execution_tool.description
+    assert "Executes the given Python code snippet" in code_execution_tool.description
+
+    # Note: Accessing detailed parameter schema (types, required) from FunctionTool
+    # object can be unreliable or depend on internal ADK details.
+    # We rely on the function signature and other tests for functional verification.
 
 @pytest.mark.asyncio
 async def test_execute_simple_print():

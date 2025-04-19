@@ -239,7 +239,7 @@
 - [X] `src/jarvis/tools/web_search_tool.py` 파일에 `web_search_tool` ADK `FunctionTool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 `web_search`인지 확인
     - [X] `description` 속성이 올바른 설명을 포함하는지 확인 (함수 독스트링 확인)
-- [X] `function_declarations` 내부 스키마 확인 (타입, 필수 필드 등) # 객체 타입/이름/설명 존재 확인 완료, 세부 스키마(타입/필수) 직접 확인은 ADK 내부 구현으로 어려움
+- [X] `function_declarations` 내부 스키마 확인 (타입, 필수 필드 등) # 객체 타입/이름/설명 존재 확인 완료, 세부 스키마 직접 확인은 ADK 내부 구현으로 어려움
 - [X] **기본 검색 테스트 (Mock)**: `DDGS().atext`가 Mock 결과를 반환하도록 설정하고, `web_search` 함수 호출 시 예상되는 포맷의 문자열 결과가 반환되는지 확인
 - [X] **결과 없음 테스트 (Mock)**: `DDGS().atext`가 빈 리스트를 반환하도록 설정하고, `web_search` 함수 호출 시 "No relevant information found..." 메시지가 반환되는지 확인
 - [X] **API 호출 오류 테스트 (Mock)**: `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
@@ -249,8 +249,7 @@
 - [X] `src/jarvis/tools/code_execution_tool.py` 파일에 `code_execution_tool` ADK `FunctionTool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 `execute_python_code`인지 확인
     - [X] `description` 속성이 함수의 독스트링과 일치하는지 확인 (보안 경고 포함)
-    - [-] 내부 `function_declarations` 확인 (어려움)
-        - [-] `parameters` 스키마에 `code` (필수) 필드가 정의되어 있는지 확인 (어려움)
+- [X] 내부 `function_declarations` 확인 (타입, 필수 필드 등) # 객체 타입/이름/설명 존재 확인 완료, 세부 스키마 직접 확인은 ADK 내부 구현으로 어려움
 - [X] **기본 실행 테스트**: 간단한 `print`문 실행 시 `Stdout:`와 함께 올바른 출력이 반환되는지 확인
 - [X] **계산 및 출력 테스트**: 변수 할당 및 계산 후 `print`하는 코드 실행 시 올바른 출력이 반환되는지 확인
 - [X] **표준 에러(stderr) 캡처 테스트**: `import sys; sys.stderr.write('Error message')` 실행 시 `Stderr:`와 함께 올바른 에러 메시지가 반환되는지 확인

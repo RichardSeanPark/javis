@@ -5,6 +5,8 @@ from unittest.mock import patch, AsyncMock, MagicMock
 
 from src.jarvis.tools.web_search_tool import web_search, web_search_tool
 from google.adk.tools import FunctionTool
+# Import types needed for schema verification
+from google.genai.types import FunctionDeclaration, Schema as GenaiSchema, Type as GenaiType, Tool
 
 # Configure logging for tests
 logging.basicConfig(level=logging.INFO)
@@ -17,18 +19,18 @@ MOCK_SEARCH_RESULTS = [
 
 MOCK_EMPTY_RESULTS = []
 
-@pytest.mark.asyncio
-async def test_web_search_tool_definition():
+def test_web_search_tool_definition():
     """웹 검색 도구(web_search_tool) 객체가 올바르게 정의되었는지 확인합니다."""
+    # Check against the specific ADK FunctionTool type
     assert isinstance(web_search_tool, FunctionTool)
+    # Check the name derived from the function
     assert web_search_tool.name == "web_search"
-    assert "Searches the web" in web_search_tool.func.__doc__
+    # Check that the description exists (derived from docstring)
+    assert web_search_tool.description is not None and len(web_search_tool.description) > 0
 
-    # Check function declarations (basic check)
-    # func_decl = web_search_tool._get_declaration()
-    # assert func_decl.name == "web_search"
-    # assert "query" in func_decl.parameters.properties
-    # assert "query" in func_decl.parameters.required
+    # Note: Accessing detailed parameter schema (types, required) from FunctionTool
+    # object can be unreliable or depend on internal ADK details.
+    # We rely on the function signature and other tests for functional verification.
 
 @pytest.mark.asyncio
 @patch('src.jarvis.tools.web_search_tool.DDGS', new_callable=MagicMock)

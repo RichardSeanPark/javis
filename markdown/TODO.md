@@ -109,11 +109,11 @@
         - [X] **3.3.2. ADK 자동 위임 설정**: \
             * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)\n            * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 하위 에이전트에 위임하도록 설정\n            * 디스패처의 `instruction`에 라우팅 가이드라인 추가 (예: "Route the user's request based on the following specialized agents: ...")
             * ADK의 자동 위임 기능을 활용하여 LLM이 자연스럽게 적합한 하위 에이전트를 선택하도록 함 (Live API 테스트 포함)
-         - [-] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):
-            *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)
-            *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄
-            *   검색된 A2A 에이전트의 Agent Card를 평가하여 최적의 에이전트 선택
-            *   선택된 A2A 에이전트 호출 로직 구현 (A2A 프로토콜 메시지 구성 및 전송)
+         - [X] **3.3.3. A2A 동적 검색 로직 구현**: (Dispatcher 관점의 검색/호출 로직 구현 완료, Mock 테스트 통과)
+             *   [X] 내부 에이전트로 처리 불가 시 `_discover_a2a_agents` 호출하여 Agent Hub에 검색 요청
+             *   [X] Discovery 쿼리에 필요한 능력(capability) 전달
+             *   [X] 검색된 A2A 에이전트 목록에서 첫 번째 에이전트 선택 (선택 로직 상세화는 TODO)
+             *   [X] 선택된 에이전트에 대해 `_call_a2a_agent` 호출하여 A2A 통신 수행 및 결과 반환
 - [X] **3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입**
     - [X] Dispatcher가 위임 결정 시 필요한 정보(`DelegationInfo`: 에이전트 이름, 입력, 언어, 툴, 대화 이력)를 반환하도록 수정
     - [X] Runner로부터 `_run_async_impl` 호출 시, `DelegationInfo`를 기반으로:

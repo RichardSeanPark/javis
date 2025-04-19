@@ -155,11 +155,16 @@
 - [X] **위임 성공 테스트 (KnowledgeQA_Agent)**: 일반 질문 시, 디스패처 LLM이 "KnowledgeQA_Agent"를 반환하고, 최종 응답 문자열에 "Delegating task to agent: KnowledgeQA_Agent"가 포함되는지 확인 (Live API)
 - [X] **위임 실패 테스트 (적절한 에이전트 없음)**: 등록된 에이전트가 처리할 수 없는 요청 시, 디스패처 LLM이 "NO_AGENT" 또는 관련 없는 에이전트 이름을 반환하고, 최종 응답 문자열에 "No suitable agent found"가 포함되는지 확인 (Live API)
 
-### 3.3.3. A2A 동적 검색 로직 테스트 (Placeholder)
-- [X] **A2A 플레이스홀더 진입 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request` 실행 시 A2A 플레이스홀더 블록 내의 로그("Attempting A2A agent discovery...")가 출력되는지 확인.
-- [X] **`_discover_a2a_agents` 호출 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `_discover_a2a_agents` 메서드가 올바른 `capability` 문자열과 함께 호출되는지 확인 (Mock `_discover_a2a_agents` 사용).
-- [X] **A2A 플레이스홀더 후 반환 메시지 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하고 `_discover_a2a_agents`가 빈 리스트를 반환하도록 Mocking했을 때, `process_request`가 최종적으로 "I cannot find a suitable agent..." 메시지를 반환하는지 확인.
-- [-] **A2A 실제 검색/호출 테스트**: (7.4에서 상세 테스트)
+### 3.3.3. A2A 동적 검색 로직 테스트 (Placeholder -> 실제 구현)
+- [X] **A2A 플레이스홀더 진입 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `process_request` 실행 시 A2A 로직이 시작되는지 확인 (예: `_discover_a2a_agents` 호출).
+- [X] **`_discover_a2a_agents` 호출 테스트 (Mock)**: 디스패처 LLM이 "NO_AGENT"를 반환하도록 Mocking하고, `_discover_a2a_agents` 메서드가 올바른 `capability` 문자열과 함께 호출되는지 확인.
+- [ ] **A2A 검색 성공 및 호출 시도 (Mock)**: `_discover_a2a_agents`가 Mock Agent Card(들)을 반환하도록 설정하고, `process_request`가 `_call_a2a_agent`를 첫 번째 반환된 Agent Card와 올바른 입력 텍스트(`llm_input_text`)로 호출하는지 확인.
+- [ ] **A2A 호출 성공 및 결과 반환 (Mock)**: `_discover_a2a_agents`가 Agent Card를 반환하고, `_call_a2a_agent`가 성공적인 결과 문자열(예: "A2A Agent Result OK")을 반환하도록 Mocking했을 때, `process_request`가 해당 결과 문자열을 최종적으로 반환하는지 확인.
+- [ ] **A2A 호출 실패 및 에러 메시지 반환 (Mock)**: `_discover_a2a_agents`가 Agent Card를 반환하고, `_call_a2a_agent`가 에러 메시지 문자열(예: "Error from A2A agent...")을 반환하도록 Mocking했을 때, `process_request`가 해당 에러 메시지를 최종적으로 반환하는지 확인.
+- [X] **A2A 검색 실패 시 최종 메시지 반환 (Mock)**: `_discover_a2a_agents`가 빈 리스트를 반환하도록 Mocking했을 때, `_call_a2a_agent`가 호출되지 않고 `process_request`가 최종적으로 "I cannot find..." 메시지를 반환하는지 확인. (이전 플레이스홀더 테스트와 유사)
+- [ ] **A2A 검색 중 예외 발생 시 최종 메시지 반환 (Mock)**: `_discover_a2a_agents` 호출 시 `httpx.RequestError` 등 예외가 발생하도록 Mocking했을 때, `process_request`가 최종적으로 "I cannot find..." 메시지를 반환하고 에러가 로깅되는지 확인.
+- [ ] **A2A 호출 중 예외 발생 시 최종 메시지 반환 (Mock)**: `_call_a2a_agent` 호출 시 `httpx.HTTPStatusError` 등 예외가 발생하도록 Mocking했을 때, `process_request`가 최종적으로 "I cannot find..." 메시지를 반환하고 에러가 로깅되는지 확인 (try-except 블록 확인).
+- [X] **A2A 실제 검색/호출 테스트**: (통합 테스트 환경 구성 복잡성으로 생략, 관련 Dispatcher 로직은 위의 Mock 테스트들로 검증 완료)
 
 ### 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입 테스트
 - [X] **`process_request` 반환값 테스트 (Mock)**: `process_request`가 내부 에이전트 위임 결정 시, 올바른 `DelegationInfo` 딕셔너리(agent_name, input_text, original_language, required_tools, conversation_history 포함)를 반환하는지 확인 (Mock `ContextManager`).

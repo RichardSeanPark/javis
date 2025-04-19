@@ -243,6 +243,10 @@
 - [X] **기본 검색 테스트 (Mock)**: `DDGS().atext`가 Mock 결과를 반환하도록 설정하고, `web_search` 함수 호출 시 예상되는 포맷의 문자열 결과가 반환되는지 확인
 - [X] **결과 없음 테스트 (Mock)**: `DDGS().atext`가 빈 리스트를 반환하도록 설정하고, `web_search` 함수 호출 시 "No relevant information found..." 메시지가 반환되는지 확인
 - [X] **API 호출 오류 테스트 (Mock)**: `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+- [X] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+- [X] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+- [X] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+- [X] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
 - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
 ### 5.4. 코드 실행 툴 (`code_execution_tool`) 테스트
@@ -335,3 +339,9 @@
     - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
 *   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
     - [X] 유효한 `agent_card`
+    - [X] API 호출 오류 테스트 (Mock): `DDGS().atext` 호출 시 예외가 발생하도록 Mocking하고, `web_search` 함수 호출 시 "An error occurred..." 메시지가 반환되는지 확인
+    - [ ] **요약 성공 테스트 (Mock LLM)**: 충분히 긴 Mock 검색 결과(`DDGS().atext` Mock 반환값)와 초기화된 Mock LLM(`genai.GenerativeModel` Mock)이 주어졌을 때, `web_search` 함수가 `model.generate_content_async`를 올바른 요약 프롬프트로 호출하고, Mock LLM 응답(`response.text`)을 포함한 "Summary based on..." 형식의 문자열을 반환하는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (짧은 결과)**: `DDGS().atext` Mock 반환값이 200자 미만일 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 건너뛰기 테스트 (LLM 미초기화)**: `web_search_tool.LLM_CLIENT_INITIALIZED`를 `False`로 패치(patch)했을 때, `genai.GenerativeModel`이 호출되지 않고 "Web Search Results for..." 형식의 원본 결과 문자열이 반환되는지 확인.
+    - [ ] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
+    - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인

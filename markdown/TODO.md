@@ -124,6 +124,8 @@
 - [X] **3.5. 결과 처리 및 반환**
     - [X] 하위 에이전트로부터 **영어 결과** 수신
     - [X] 최종 응답 생성기로 전달 (또는 Dispatcher가 직접 처리 - 6단계에서 상세화)
+    - [X] (툴 구현은 5단계에서) 웹 검색 툴 인터페이스 정의 (`web_search` 함수 시그니처)
+    - [X] (툴 구현은 5단계에서) 번역 툴 인터페이스 정의 (`translate_text` 함수 시그니처)
 - [X] **3.6. 에러 핸들링**: 입력 파싱 실패, 라우팅 실패, 하위 에이전트 실행 오류 등에 대한 예외 처리 로직 추가
 - [X] **3.7. 패키지 루트 노출**: `src/jarvis/__init__.py` 에서 `root_agent = JarvisDispatcher()` 인스턴스 생성 및 노출
 
@@ -133,13 +135,14 @@
     - [X] `CodingAgent` 클래스 정의 (ADK `LlmAgent` 상속)
     - [X] `__init__` 메서드: `name="CodingAgent"`, `description="Generates, analyzes, debugs, and optimizes code based on user requests in English."`, `model` 설정. 필요한 툴(코드 실행기 등) 등록 placeholder.
     - [X] `instruction` 필드: 에이전트의 역할, 작동 방식, 출력 형식 등을 영어로 상세히 기술
-    - [-] (툴 구현은 5단계에서) 코드 실행기 툴 인터페이스 정의 (`execute_python_code` 함수 시그니처)
+    - [X] (툴 구현은 5단계에서) 코드 실행기 툴 인터페이스 정의 (`execute_python_code` 함수 시그니처)
     - [X] 모듈 등록: `src/jarvis/agents/__init__.py` 생성 및 `from .coding_agent import CodingAgent` 추가
 *   **4.2. 지식 QA 에이전트 (`src/jarvis/agents/qa_agent.py`)**
     - [X] `KnowledgeQA_Agent` 클래스 정의 (ADK `LlmAgent` 상속)
     - [X] `__init__` 메서드: `name="KnowledgeQA_Agent"`, `description="Answers general knowledge questions in English. Can use web search for up-to-date information."`, `model` 설정. 웹 검색 툴 등록 placeholder.
     - [X] `instruction` 필드: 역할, 웹 검색 사용 시점, 답변 형식 등을 영어로 기술
-    - [-] (툴 구현은 5단계에서) 웹 검색 툴 인터페이스 정의 (`web_search` 함수 시그니처)
+    - [X] (툴 구현은 5단계에서) 웹 검색 툴 인터페이스 정의 (`web_search` 함수 시그니처)
+    - [X] (툴 구현은 5단계에서) 번역 툴 인터페이스 정의 (`translate_text` 함수 시그니처)
     - [X] 모듈 등록: `src/jarvis/agents/__init__.py`에 `from .qa_agent import KnowledgeQA_Agent` 추가
 *   **4.3. Dispatcher에 초기 에이전트 등록**
     - [X] `src/jarvis/core/dispatcher.py` 수정:
@@ -159,7 +162,7 @@
     - [X] **웹 검색 툴 (`src/jarvis/tools/web_search_tool.py`)**
         - [X] `web_search(query: str) -> str` 함수 정의
         - [X] 외부 검색 API (예: Google Custom Search API, Tavily API 등) 호출 로직 구현 (duckduckgo_search 사용)
-        - [-] 검색 결과 요약 또는 가공 로직 (필요시 LLM 추가 호출) # LLM 요약 기능 미구현
+        - [X] 검색 결과 요약 또는 가공 로직 (필요시 LLM 추가 호출)
         - [X] ADK `Tool` 객체 생성 (`description` 자동 설정됨)
     - [X] **코드 실행 툴 (`src/jarvis/tools/code_execution_tool.py`)**
         - [X] `execute_python_code(code: str) -> str` 함수 정의

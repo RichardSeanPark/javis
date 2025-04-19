@@ -9,7 +9,7 @@ from ..components.input_parser import InputParserAgent
 # from ..core.context_manager import ContextManager # Import ContextManager - 주석 처리
 from pydantic import Field # Field 임포트 추가
 from ..models.input import ParsedInput # ParsedInput 임포트 추가
-from typing import Optional, List, Dict, Any, AsyncGenerator # Import List, Any, AsyncGenerator
+from typing import Optional, List, Dict, Any, AsyncGenerator, TypedDict, Union # Import List, Any, AsyncGenerator, TypedDict, Union
 # import google.generativeai as genai # ADK 코드와 일치시키기 위해 주석 처리
 import google.genai as genai # ADK 코드에서 사용하는 google.genai 임포트
 # from google.generativeai.types import GenerateContentResponse # 경로 변경
@@ -36,6 +36,8 @@ from ..agents.qa_agent import KnowledgeQA_Agent
 # Import available tools and specific tools
 from ..tools import available_tools, translate_tool, web_search_tool, code_execution_tool # Added tool imports
 from google.adk.tools import BaseTool # Import BaseTool for type hinting
+
+from ..core.context_manager import ContextManager # ContextManager 임포트
 
 logger = logging.getLogger(__name__) # 로거 설정
 
@@ -69,6 +71,14 @@ DEFAULT_INSTRUCTION = (
 # Agent Hub URL 설정 (환경 변수 또는 기본값)
 AGENT_HUB_DISCOVER_URL = os.getenv("AGENT_HUB_DISCOVER_URL", "http://localhost:8001/discover") # Agent Hub URL 추가
 
+class DelegationInfo(TypedDict):
+    """하위 에이전트 호출에 필요한 정보를 담는 타입 딕셔너리"""
+    agent_name: str
+    input_text: str
+    original_language: Optional[str]
+    required_tools: List[BaseTool]
+    conversation_history: Optional[str] # 추가: 대화 이력
+
 class JarvisDispatcher(LlmAgent):
     """
     Central dispatcher for the Jarvis AI Framework.
@@ -85,6 +95,7 @@ class JarvisDispatcher(LlmAgent):
     current_parsed_input: Optional[ParsedInput] = None
     current_original_language: Optional[str] = None
     http_client: httpx.AsyncClient = Field(default=None, exclude=True) # HTTP 클라이언트 필드 추가
+    context_manager: ContextManager = Field(default_factory=ContextManager) # ContextManager 추가
 
     def __init__(self, **kwargs):
         """
@@ -197,11 +208,11 @@ class JarvisDispatcher(LlmAgent):
             logger.warning(f"Agent with name \'{agent.name}\' overwritten.")
         logger.info(f"Agent '{agent.name}' (type: {type(agent)}, model: {getattr(agent, 'model', 'N/A')}) registered/updated. Current tools: {[getattr(t, 'name', 'N/A') for t in self.tools]}")
 
-    async def process_request(self, user_input: str) -> str:
+    async def process_request(self, user_input: str, session_id: Optional[str] = None) -> Union[DelegationInfo, str]: # 반환 타입 변경
         """
-        사용자 입력을 받아 파싱하고, 직접 LLM 호출을 통해 위임할 에이전트 이름을 결정한 후,
-        결과 메시지를 반환합니다. (실제 에이전트 호출은 외부 Runner가 담당 가정)
-        A2A 동적 검색 로직 placeholder 추가.
+        사용자 입력을 받아 파싱하고, 위임할 에이전트 및 관련 정보를 결정합니다.
+        반환값: 위임이 필요하면 DelegationInfo, 아니면 에러 또는 정보 메시지 문자열.
+        session_id 추가.
         """
         # 1. Parse Input
         if not self.input_parser:
@@ -218,13 +229,21 @@ class JarvisDispatcher(LlmAgent):
         llm_input_text = self.current_parsed_input.english_text
         logger.info(f"Dispatcher deciding delegation for: {llm_input_text[:100]}...")
 
+        # --- 추가: ContextManager에서 대화 이력 가져오기 ---
+        conversation_history = None
+        if session_id:
+            conversation_history = self.context_manager.get_formatted_context(session_id)
+            logger.debug(f"Retrieved conversation history for session {session_id}:\n{conversation_history[:200]}...")
+        else:
+            logger.warning("No session_id provided to process_request, cannot retrieve conversation history.")
+        # --- 대화 이력 가져오기 끝 ---
+
         # 2. Prepare Prompt for Delegation Decision
-        # Generate the list of available tools/agents for the prompt
         tool_descriptions = "\n".join([
+            # Handle Agents and Tools differently, or use getattr robustly
             f"- {getattr(tool, 'name', 'N/A')}: {getattr(tool, 'description', 'N/A')}"
-            for tool in self.tools
+            for tool in self.tools # self.tools currently contains Agent instances
         ])
-        # Combine instruction, tool descriptions, and user query
         prompt = f"{self.instruction}\n{tool_descriptions}\n\nUser Request: {llm_input_text}"
         logger.debug(f"Dispatcher Prompt:\n{prompt}")
 
@@ -238,129 +257,137 @@ class JarvisDispatcher(LlmAgent):
 
         try:
             logger.info(f"Calling dispatcher's LLM (model={self.model}) via Client for delegation decision.")
-            # Client 객체를 사용하여 generate_content_async 호출 (모델 이름 전달 필요)
-            # 수정: python-genai 1.11.0 방식인 aio.models 사용
             response = await dispatcher_llm_client.aio.models.generate_content(
-                model=self.model, # 사용할 모델 이름 명시 (GenerativeModel과 달리 Client 사용 시 모델 지정 불필요할 수 있음 - 확인 필요)
-                contents=[Content(parts=[Part(text=prompt)])] # Content 객체 리스트로 전달
+                model=self.model,
+                contents=[Content(parts=[Part(text=prompt)])]
             )
-
             logger.debug(f"Raw Delegation LLM Response type: {type(response)}")
             logger.debug(f"Raw Delegation LLM Response: {response}")
 
-            # Extract the agent name from the response
             if response and hasattr(response, 'text'):
-                # Assuming response.text directly contains the agent name or NO_AGENT
                 potential_agent_name = response.text.strip()
-                # Simple validation: check if the name exists in sub_agents
                 if potential_agent_name in self.sub_agents:
                     delegated_agent_name = potential_agent_name
                     logger.info(f"Dispatcher LLM decided to delegate to internal agent: {delegated_agent_name}")
                 elif potential_agent_name == "NO_AGENT":
                      logger.info("Dispatcher LLM indicated no suitable internal agent found.")
-                     # --- A2A Discovery Placeholder ---
+                     # --- A2A Discovery Placeholder (Placeholder logic remains) ---
                      logger.info("Attempting A2A agent discovery...")
-                     # Define needed capability based on parsed_input (example)
                      needed_capability = f"Handle intent '{self.current_parsed_input.intent}' in domain '{self.current_parsed_input.domain}'"
                      discovered_agents = await self._discover_a2a_agents(needed_capability)
                      if discovered_agents:
-                         # TODO (Step 7): Implement logic to select the best A2A agent
-                         # For now, just log the discovery
                          logger.info(f"Discovered {len(discovered_agents)} potential A2A agents.")
-                         # Placeholder: Select the first discovered agent for now
-                         # selected_a2a_agent_card = discovered_agents[0]
-                         # delegated_agent_name = f"A2A:{selected_a2a_agent_card.get('name', 'Unknown')}" # Mark as A2A
-                         # logger.info(f"Selected A2A agent (placeholder): {delegated_agent_name}")
-                         pass # Keep delegated_agent_name as "NO_AGENT" until selection logic is implemented
+                         # Keep delegated_agent_name as "NO_AGENT" until selection logic (Step 7)
                      else:
                          logger.info("No suitable A2A agents discovered.")
                      # --- End A2A Discovery Placeholder ---
-
                 else:
                     logger.warning(f"Dispatcher LLM returned an unknown agent name: '{potential_agent_name}'. Treating as NO_AGENT.")
                     delegated_agent_name = "NO_AGENT"
-
             else:
                 logger.error(f"Failed to get valid text response from delegation LLM. Response: {response}")
                 delegated_agent_name = "NO_AGENT"
-
         except Exception as e:
             logger.error(f"Error during LLM call for delegation: {e}", exc_info=True)
-            delegated_agent_name = "NO_AGENT" # Ensure default on error
+            delegated_agent_name = "NO_AGENT"
 
-        # 4. Return Result (Placeholder - Actual invocation happens elsewhere)
-        # Based on the decided agent, prepare a message or structure for the runner
-        if delegated_agent_name != "NO_AGENT":
-            # TODO: Refine this return message/structure based on Runner needs
-            # return f"Delegating task to agent: {delegated_agent_name}"
-            # --- Triggering Agent Call (Simulation/Placeholder) ---
-            # In a real scenario, the runner would handle this based on the name.
-            # Here, we simulate the start of the invocation process for logging.
-            if delegated_agent_name.startswith("A2A:"):
-                 logger.info(f"Dispatcher requests Runner to invoke A2A agent: {delegated_agent_name.split(':')[1]}")
-                 # Placeholder for A2A call structure
-                 # task_input = self.current_parsed_input.english_text # Or more structured input
-                 # result = await self._call_a2a_agent(selected_a2a_agent_card, task_input)
-                 # return f"A2A agent execution result (placeholder): {result}"
-                 return "A2A agent invocation requested (Runner should handle)." # Placeholder return
-            elif delegated_agent_name in self.sub_agents:
-                 logger.info(f"Dispatcher requests Runner to invoke internal agent: {delegated_agent_name}")
-                 # The Runner would typically call self.sub_agents[delegated_agent_name].invoke()
-                 return f"Internal agent invocation requested: {delegated_agent_name}" # Placeholder return
-            else: # Should not happen if logic above is correct
-                 logger.error(f"Internal error: Invalid delegated_agent_name '{delegated_agent_name}' reached return stage.")
-                 return "Error: Internal dispatcher error during agent selection."
+        # 4. Return Result (DelegationInfo or message)
+        if delegated_agent_name != "NO_AGENT" and delegated_agent_name in self.sub_agents:
+            required_tools = self.agent_tool_map.get(delegated_agent_name, [])
+            # Use getattr for safety in logging tool names
+            logger.info(f"Preparing delegation info for '{delegated_agent_name}' with tools: {[getattr(t, 'name', 'Unnamed Tool') for t in required_tools]}")
+            delegation_info: DelegationInfo = {
+                "agent_name": delegated_agent_name,
+                "input_text": llm_input_text,
+                "original_language": self.current_original_language,
+                "required_tools": required_tools,
+                "conversation_history": conversation_history
+            }
+            return delegation_info
+        elif delegated_agent_name.startswith("A2A:"):
+             logger.warning("A2A delegation logic not fully implemented yet.")
+             return "A2A agent invocation requested (Runner should handle)."
         else:
             logger.info("No suitable agent found (internal or A2A).")
-            # TODO: Define behavior when no agent can handle the request
             return "I cannot find a suitable agent to handle your request at this time."
-
-        # --- Old Return Logic (commented out) ---
-        # # 5. (Optional) Generate Final Response (moved to ResponseGenerator/Runner)
-        # # english_result = f"Task delegated to {delegated_agent_name}." # Placeholder result
-        # # final_response = await self.response_generator.generate_response(
-        # #     english_result, self.current_original_language or 'en'
-        # # )
-        # # return final_response
-        # return f"Delegation decision: {delegated_agent_name}" # Simplified return for now
 
     @override
     async def invoke(self, ctx: InvocationContext):
-        # Dispatcher 자체는 직접 invoke되지 않아야 함 (Runner가 process_request를 사용하도록)
-        # 또는 process_request를 호출하도록 구현?
-        # 여기서는 에러를 발생시켜 잘못된 사용을 방지
         raise NotImplementedError("JarvisDispatcher should not be invoked directly. Use process_request or run via Runner.")
 
     async def _run_async_impl(
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
-         # Runner가 agent.run_async를 호출할 때 이 메소드가 실행될 수 있음.
-         # process_request를 호출하고 결과를 이벤트로 변환하는 방식으로 구현 가능
-         # user_input = ctx.get_last_user_message_text() # AttributeError 발생 지점
+         """
+         Runner로부터 호출받아 process_request 실행 후,
+         하위 에이전트 호출 위임 또는 최종 메시지 반환.
+         """
          user_input = None
-         # InvocationContext 구조 변경 가능성에 대비하여 안전하게 접근
+         session_id = ctx.session.id if ctx.session else None
+
          if ctx.user_content and hasattr(ctx.user_content, 'parts') and ctx.user_content.parts:
              if hasattr(ctx.user_content.parts[0], 'text'):
                  user_input = ctx.user_content.parts[0].text
 
          if not user_input:
               logger.warning("_run_async_impl called without user input text in context.")
-              # 수정: Event 생성자 사용
-              yield Event(
-                   author=self.name,
-                   content=Content(parts=[Part(text="Error: Could not get user input from context.")])
-                   # invocation_id 등 다른 필수 필드가 있다면 추가 필요
-              )
+              yield Event(author=self.name, content=Content(parts=[Part(text="Error: Could not get user input from context.")]))
               return
 
-         result_text = await self.process_request(user_input)
+         result = await self.process_request(user_input, session_id=session_id)
 
-         # 수정: Event 생성자 사용
-         yield Event(
-              author=self.name,
-              content=Content(parts=[Part(text=result_text)])
-              # invocation_id 등 다른 필수 필드가 있다면 추가 필요
-         )
+         if isinstance(result, dict) and "agent_name" in result:
+             delegation_info: DelegationInfo = result
+             agent_name = delegation_info["agent_name"]
+             sub_agent = self.sub_agents.get(agent_name)
+
+             if sub_agent:
+                 logger.info(f"Dispatcher delegating to sub-agent: {agent_name}")
+                 original_tools = sub_agent.tools
+                 original_instruction = getattr(sub_agent, 'instruction', None)
+                 try:
+                     sub_agent.tools = delegation_info["required_tools"]
+                     logger.debug(f"Temporarily set tools for {agent_name}: {[getattr(t, 'name', 'Unnamed Tool') for t in sub_agent.tools]}")
+
+                     # Prepare context string
+                     context_prompt = "\n\n---\nContext:\n"
+                     if delegation_info["conversation_history"]:
+                          context_prompt += f'Conversation History:\n{delegation_info["conversation_history"]}\n'
+                     context_prompt += f'Original Language: {delegation_info["original_language"]}\n---'
+
+                     # Temporarily update instruction
+                     base_instruction = original_instruction if original_instruction is not None else ""
+                     temp_instruction = base_instruction + context_prompt
+                     if hasattr(sub_agent, 'instruction'):
+                         setattr(sub_agent, 'instruction', temp_instruction)
+                         logger.debug(f"Temporarily updated instruction for {agent_name}")
+                     else:
+                         logger.warning(f"Agent {agent_name} does not have an 'instruction' attribute to update.")
+
+                     # Yield a basic Event, assuming author and content are core fields
+                     yield Event(
+                         author=self.name,
+                         content=Content(parts=[Part(text=f"[System] Delegating to {agent_name}. Runner should invoke.")])
+                     )
+                 finally: # Finally block correctly indented relative to try
+                     logger.debug(f"Restoring original tools and instruction for {agent_name}")
+                     sub_agent.tools = original_tools
+                     # Restore instruction only if it was originally present and modified
+                     if hasattr(sub_agent, 'instruction') and original_instruction is not None:
+                         setattr(sub_agent, 'instruction', original_instruction)
+
+             else: # Correct indentation for the 'else' block associated with 'if sub_agent:'
+                 logger.error(f"Delegation target agent '{agent_name}' not found in sub_agents.")
+                 # Yield basic error event
+                 yield Event(author=self.name, content=Content(parts=[Part(text=f"Error: Could not find agent {agent_name} to delegate to.")]))
+
+         elif isinstance(result, str): # Correct indentation for 'elif' associated with 'if isinstance(result, dict)...'
+             # Yield basic final message event
+             yield Event(author=self.name, content=Content(parts=[Part(text=result)]))
+         else: # Correct indentation for 'else' associated with 'if isinstance(result, dict)...'
+             logger.error(f"process_request returned unexpected type: {type(result)}")
+             # Yield basic internal error event
+             yield Event(author=self.name, content=Content(parts=[Part(text="Error: Internal dispatcher error.")]))
 
     # --- A2A Discovery and Call Methods ---
     async def _discover_a2a_agents(self, capability: str) -> List[Dict[str, Any]]:

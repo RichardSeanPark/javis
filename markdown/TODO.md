@@ -107,15 +107,20 @@
     - [X] **라우팅 결정 로직 시작 (단계적 구현)**
         - [X] **3.3.1. 규칙 기반 라우팅 구현**: `ParsedInput.intent` 또는 `ParsedInput.domain` 기반으로 특정 키를 가진 `self.sub_agents`를 직접 선택하는 조건문 추가 (초기 단계)
         - [X] **3.3.2. ADK 자동 위임 설정**: \
-            * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)\n            * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 하위 에이전트에 위임하도록 설정\n            * 디스패처의 `instruction`에 라우팅 가이드라인 추가 (예: \"Route the user\'s request based on the following specialized agents: ...\")\n            * ADK의 자동 위임 기능을 활용하여 LLM이 자연스럽게 적합한 하위 에이전트를 선택하도록 함 (Live API 테스트 포함)
+            * `JarvisDispatcher`의 `tools` 속성에 하위 에이전트들을 추가 (또는 `sub_agents` 파라미터 활용)\n            * LLM이 각 에이전트의 `description`을 기반으로 작업을 자동으로 적합한 하위 에이전트에 위임하도록 설정\n            * 디스패처의 `instruction`에 라우팅 가이드라인 추가 (예: "Route the user's request based on the following specialized agents: ...")
+            * ADK의 자동 위임 기능을 활용하여 LLM이 자연스럽게 적합한 하위 에이전트를 선택하도록 함 (Live API 테스트 포함)
          - [-] **3.3.3. A2A 동적 검색 로직 구현** (7단계에서 상세화):
             *   내부 에이전트로 처리 불가 시 Agent Hub에 Discovery 쿼리 보내는 로직 (Agent Hub 클라이언트 사용)
             *   Discovery 쿼리는 필요한 능력(capability)을 명확히 기술하여 보냄
             *   검색된 A2A 에이전트의 Agent Card를 평가하여 최적의 에이전트 선택
             *   선택된 A2A 에이전트 호출 로직 구현 (A2A 프로토콜 메시지 구성 및 전송)
-- [-] **3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입**
-    - [-] 선택된 하위 에이전트(ADK) 호출 시, `ParsedInput.english_text`와 필요한 컨텍스트(`original_language`, 대화 이력 등) 전달 로직
-    - [-] 에이전트에게 허용된 툴 목록 및 설정(API 키 등) 주입 로직 설계 (ADK 방식 활용)
+- [X] **3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입**
+    - [X] Dispatcher가 위임 결정 시 필요한 정보(`DelegationInfo`: 에이전트 이름, 입력, 언어, 툴, 대화 이력)를 반환하도록 수정
+    - [X] Runner로부터 `_run_async_impl` 호출 시, `DelegationInfo`를 기반으로:
+        - [X] 위임 대상 에이전트에게 필요한 툴 목록(`DelegationInfo.required_tools`)을 임시로 설정
+        - [X] 위임 대상 에이전트의 `instruction`에 컨텍스트 정보(대화 이력, 원본 언어)를 임시로 추가
+        - [X] 실행 후 원래 `tools`와 `instruction`으로 복구
+        - [X] Runner가 실제 호출을 수행하도록 위임 `Event` 반환 (실제 호출 로직은 Runner 담당)
 - [-] **3.5. 결과 처리 및 반환**
     - [-] 하위 에이전트로부터 **영어 결과** 수신
     - [-] 최종 응답 생성기로 전달 (또는 Dispatcher가 직접 처리 - 6단계에서 상세화)

@@ -162,14 +162,17 @@
 - [-] **A2A 실제 검색/호출 테스트**: (7.4에서 상세 테스트)
 
 ### 3.4. 선택된 에이전트 호출 및 컨텍스트/툴 주입 테스트
-- [ ] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `ParsedInput.english_text`와 `original_language`를 올바르게 전달하는지 확인 (Mock 사용)
-- [ ] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `agent_tool_map`에 정의된 올바른 툴 목록만 주입하는지 확인 (Mock 사용)
-- [ ] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, 대화 이력 컨텍스트를 올바르게 주입하는지 확인 (Mock `ContextManager` 사용)
+- [X] **`process_request` 반환값 테스트 (Mock)**: `process_request`가 내부 에이전트 위임 결정 시, 올바른 `DelegationInfo` 딕셔너리(agent_name, input_text, original_language, required_tools, conversation_history 포함)를 반환하는지 확인 (Mock `ContextManager`).
+- [X] **`_run_async_impl` 위임 이벤트 테스트 (Mock)**: `process_request`가 `DelegationInfo`를 반환했을 때, `_run_async_impl`이 올바른 콘텐츠(`[System] Delegating to ...`)를 포함한 위임 `Event`를 yield하는지 확인.
+- [X] **툴 임시 주입 및 복구 테스트 (Mock)**: `_run_async_impl`에서 위임 이벤트 발생 전후로 하위 에이전트의 `tools` 속성이 `DelegationInfo.required_tools`로 변경되었다가 원래대로 복구되는지 확인 (Mock 하위 에이전트).
+- [X] **Instruction 임시 업데이트 및 복구 테스트 (Mock)**: `_run_async_impl`에서 위임 이벤트 발생 전후로 하위 에이전트의 `instruction` 속성에 컨텍스트 정보가 추가되었다가 원래대로 복구되는지 확인 (Mock 하위 에이전트).
+- [X] **`_run_async_impl` 컨텍스트 관리자 호출 테스트 (Mock)**: `_run_async_impl` 실행 시 내부적으로 호출되는 `process_request`가 `ContextManager.get_formatted_context`를 올바른 `session_id`로 호출하는지 확인 (Mock `ContextManager` - 실제 호출은 `process_request` 테스트에서 검증됨).
+- [-] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `ParsedInput.english_text`와 `original_language`를 올바르게 전달하는지 확인 (Mock 사용) # 현재 테스트는 위임 *정보* 반환까지만 검증, 실제 호출은 Runner 역할
+- [-] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `agent_tool_map`에 정의된 올바른 툴 목록만 주입하는지 확인 (Mock 사용) # 현재 테스트는 위임 *정보* 반환까지만 검증
+- [-] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, 대화 이력 컨텍스트를 올바르게 주입하는지 확인 (Mock `ContextManager` 사용) # 현재 테스트는 위임 *정보* 반환까지만 검증
 
 ### 3.5. 결과 처리 및 반환 테스트
 - [ ] (향후 구현) 내부 에이전트가 **영어 결과**를 반환했을 때, `ResponseGenerator`로 전달되는지 확인 (Mock `ResponseGenerator`)
-- [ ] (향후 구현) A2A 에이전트 호출 결과가 `ResponseGenerator`로 전달되는지 확인 (Mock `ResponseGenerator`)
-- [ ] (향후 구현) `ResponseGenerator`를 통해 최종 응답이 생성되고 반환되는지 확인 (Mock 사용)
 
 ### 3.6. 에러 핸들링 테스트
 - [ ] `InputParserAgent` 호출 시 예외 발생 시, `process_request`가 에러 메시지를 반환하고 종료하는지 확인 (Mock 사용)

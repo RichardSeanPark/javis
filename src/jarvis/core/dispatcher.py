@@ -388,8 +388,12 @@ class JarvisDispatcher(LlmAgent):
                         try:
                             # Temporarily modify sub-agent for the call
                             logger.info(f"Dispatcher delegating to sub-agent: {agent_name}")
-                            sub_agent.tools = delegation_info["required_tools"]
-                            logger.debug(f"Temporarily set tools for {agent_name}: {[getattr(t, 'name', 'Unnamed Tool') for t in sub_agent.tools]}")
+                            # --- Tool Injection Point ---
+                            original_tools = sub_agent.tools # Store original tools
+                            required_tools_from_info = delegation_info["required_tools"]
+                            sub_agent.tools = required_tools_from_info
+                            logger.debug(f"Temporarily injected tools into {agent_name}: {[getattr(t, 'name', 'Unnamed Tool') for t in sub_agent.tools]}")
+                            # --- End Tool Injection ---
 
                             context_prompt = "\n\n---\nContext:\n"
                             if delegation_info["conversation_history"]:
@@ -406,12 +410,14 @@ class JarvisDispatcher(LlmAgent):
                                 logger.warning(f"Agent {agent_name} does not have an 'instruction' attribute to update.")
 
                             # Yield the delegation event to the Runner
+                            logger.info(f"Yielding delegation event for {agent_name} to Runner.")
                             yield Event(
                                 author=self.name,
                                 content=Content(parts=[Part(text=f"[System] Delegating to {agent_name}. Runner should invoke.")])
                             )
                             # If delegation event yields successfully, the generator finishes here.
                             # The runner will handle the actual sub-agent call.
+                            logger.debug(f"Delegation event yielded for {agent_name}. Exiting _run_async_impl generator.")
                             return # Exit generator
 
                         except Exception as delegation_prep_error:
@@ -434,33 +440,73 @@ class JarvisDispatcher(LlmAgent):
             final_response_message = "Error: An unexpected error occurred during execution." # Overwrite default error
         finally:
             # --- Restore Sub-Agent State ---
-            # This block executes regardless of whether delegation happened or an error occurred
+            # This block executes regardless of whether delegation happened or an error occurred within this generator's scope.
+            # CRITICAL NOTE: This restoration happens when *this generator* finishes, which might be *before* the Runner invokes the sub-agent.
+            # The effectiveness of the temporary tool injection relies on the Runner acting immediately on the yielded agent state.
             if sub_agent_to_restore:
                 try:
-                    logger.debug(f"Restoring original tools and instruction for {sub_agent_to_restore.name}")
-                    if original_tools is not None:
+                    # Check if original_tools was actually assigned before attempting restoration
+                    if 'original_tools' in locals() and original_tools is not None:
+                         logger.debug(f"Attempting to restore original tools for {sub_agent_to_restore.name}")
                          sub_agent_to_restore.tools = original_tools
-                    if hasattr(sub_agent_to_restore, 'instruction') and original_instruction is not None:
-                        setattr(sub_agent_to_restore, 'instruction', original_instruction)
+                    else:
+                         logger.warning(f"Cannot restore original tools for {sub_agent_to_restore.name}: 'original_tools' not defined in this scope (likely due to early exit or error before assignment).")
+
+                    # Restore instruction similarly
+                    if hasattr(sub_agent_to_restore, 'instruction'):
+                        if 'original_instruction' in locals() and original_instruction is not None:
+                            setattr(sub_agent_to_restore, 'instruction', original_instruction)
+                            logger.debug(f"Restored original instruction for {sub_agent_to_restore.name}")
+                        # else: # No warning needed if instruction wasn't modified
                 except Exception as restore_e:
                      logger.error(f"Error restoring state for {sub_agent_to_restore.name}: {restore_e}", exc_info=True)
             # --- End Restore ---
-
 
         # --- Generate and Yield Final Response/Error Event ---
         # This section is reached ONLY IF:
         # 1. Delegation didn't happen (process_request returned string or error).
         # 2. An error occurred during the try block of _run_async_impl.
+        final_ai_response_text = "Error: Failed to generate final response." # Fallback
         try:
             logger.info(f"Generating final response/error message: {final_response_message[:100]}...")
             processed_final_response = await self.response_generator.generate_response(
                 final_response_message, self.current_original_language # Use the language set by process_request
             )
-            yield Event(author=self.name, content=Content(parts=[Part(text=processed_final_response)]))
+            final_ai_response_text = processed_final_response # Store the successfully generated response
+
+            # --- Save context BEFORE yielding the final response ---
+            if session_id and user_input:
+                try:
+                    self.context_manager.add_message(
+                        session_id=session_id,
+                        user_input=user_input, # Use the input extracted at the beginning
+                        ai_response=final_ai_response_text,
+                        original_language=self.current_original_language
+                    )
+                except Exception as cm_e:
+                    logger.error(f"Failed to save context for session {session_id}: {cm_e}", exc_info=True)
+            # --- End Save context ---
+
+            yield Event(author=self.name, content=Content(parts=[Part(text=final_ai_response_text)]))
         except Exception as gen_e:
             logger.error(f"Error during final response generation: {gen_e}", exc_info=True)
             # Fallback to a very basic error message if response generator fails
-            yield Event(author=self.name, content=Content(parts=[Part(text="Error: Failed to generate final response.")]))
+            final_ai_response_text = "Error: Failed to generate final response."
+
+            # --- Attempt to save context even on generation error ---
+            if session_id and user_input:
+                try:
+                    self.context_manager.add_message(
+                        session_id=session_id,
+                        user_input=user_input,
+                        ai_response=final_ai_response_text, # Save the error message as AI response
+                        original_language=self.current_original_language
+                    )
+                except Exception as cm_e:
+                    logger.error(f"Failed to save context (after generation error) for session {session_id}: {cm_e}", exc_info=True)
+            # --- End Save context ---
+
+            yield Event(author=self.name, content=Content(parts=[Part(text=final_ai_response_text)]))
 
     # --- A2A Discovery and Call Methods ---
     async def _discover_a2a_agents(self, capability: str) -> List[Dict[str, Any]]:

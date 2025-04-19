@@ -252,6 +252,11 @@
 - [X] **요약 실패 테스트 (Mock LLM 에러)**: `genai.GenerativeModel.generate_content_async` 호출 시 예외가 발생하도록 Mocking했을 때, "Web Search Results for..." 형식의 원본 결과 문자열과 함께 "(Note: Summarization failed...)" 메시지가 포함되어 반환되는지 확인.
 - [X] `src/jarvis/tools/__init__.py`에 `web_search_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
 
+### 5.3.1 Dispatcher 컨텍스트 저장 테스트
+- [X] **컨텍스트 저장 성공 테스트 (Mock)**: `_run_async_impl`이 성공적으로 최종 응답(`processed_final_response`)을 생성하고 yield하기 직전에 `ContextManager.add_message`가 올바른 `session_id`, `user_input`, `ai_response` (`processed_final_response`와 동일), `original_language` 값으로 호출되는지 확인.
+- [X] **컨텍스트 저장 실패 시 로깅 테스트 (Mock)**: `ContextManager.add_message` 호출 시 예외가 발생하도록 Mocking했을 때, 에러가 로깅되고 최종 응답 이벤트는 정상적으로 yield되는지 확인.
+- [X] **응답 생성 실패 시 컨텍스트 저장 테스트 (Mock)**: `response_generator.generate_response` 호출 시 예외가 발생하도록 Mocking했을 때, `ContextManager.add_message`가 올바른 `session_id`, `user_input`, 그리고 *에러 메시지*(`"Error: Failed to generate final response."` 등)를 `ai_response`로 사용하여 호출되는지 확인.
+
 ### 5.4. 코드 실행 툴 (`code_execution_tool`) 테스트
 - [X] `src/jarvis/tools/code_execution_tool.py` 파일에 `code_execution_tool` ADK `FunctionTool` 객체가 정의되어 있는지 확인
     - [X] `name` 속성이 `execute_python_code`인지 확인

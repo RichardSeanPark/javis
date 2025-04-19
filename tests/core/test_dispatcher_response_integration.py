@@ -7,6 +7,9 @@ from src.jarvis.components.response_generator import ResponseGenerator
 from src.jarvis.models.input import ParsedInput # For mocking parser result
 from google.genai.types import GenerateContentResponse # For mocking LLM response
 from google.adk.agents import BaseAgent as Agent
+from google.adk.events import Event # <<< Import Event
+from google.genai.types import Content, Part # <<< Import Content, Part
+import httpx # <<< Import httpx for mocking A2A errors
 
 @pytest.fixture
 def mock_dispatcher_with_mock_resp_gen(mocker):
@@ -101,4 +104,183 @@ async def test_dispatcher_calls_response_generator_on_direct_response(
 
         # Assert the final event contains the processed response
         assert final_event is not None
-        assert final_event.content.parts[0].text == f"Processed: {direct_response_string} (Lang: {original_lang})" 
+        assert final_event.content.parts[0].text == f"Processed: {direct_response_string} (Lang: {original_lang})"
+
+# --- Test Cases from markdown/testcase.md Section 3.6 (Error Handling) ---
+
+@pytest.mark.asyncio
+async def test_error_input_parsing(mock_dispatcher_with_mock_resp_gen):
+    """3.6: 입력 파싱 오류 테스트 (Mock)"""
+    dispatcher, _, mock_input_parser, _ = mock_dispatcher_with_mock_resp_gen
+    mock_input_parser.process_input.side_effect = Exception("Parsing failed!")
+
+    result = await dispatcher.process_request("some input", session_id="test-session")
+    assert result == "Error: Failed to parse your input."
+
+@pytest.mark.asyncio
+async def test_error_llm_delegation(mock_dispatcher_with_mock_resp_gen):
+    """3.6: LLM 위임 결정 오류 테스트 (Mock)"""
+    dispatcher, _, mock_input_parser, mock_llm_client = mock_dispatcher_with_mock_resp_gen
+
+    # Setup mock parsed input
+    mock_parsed = ParsedInput(original_text="q", original_language="en", english_text="query")
+    mock_input_parser.process_input.return_value = mock_parsed
+
+    # Simulate LLM error
+    mock_llm_client.aio.models.generate_content.side_effect = Exception("LLM API Error")
+
+    result = await dispatcher.process_request("some input", session_id="test-session")
+    # Expect fallback to "no suitable agent" message as LLM error leads to NO_AGENT internal state
+    assert result == "I cannot find a suitable agent to handle your request at this time."
+
+@pytest.mark.asyncio
+async def test_error_a2a_discovery(mock_dispatcher_with_mock_resp_gen):
+    """3.6: A2A 검색 오류 테스트 (Mock)"""
+    dispatcher, _, mock_input_parser, mock_llm_client = mock_dispatcher_with_mock_resp_gen
+
+    mock_parsed = ParsedInput(original_text="q", original_language="en", english_text="query", intent="a2a_needed", domain="unknown")
+    mock_input_parser.process_input.return_value = mock_parsed
+
+    # Mock LLM to return NO_AGENT to trigger A2A check
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+
+    # Simulate A2A discovery error
+    dispatcher._discover_a2a_agents.side_effect = httpx.RequestError("Connection failed")
+
+    result = await dispatcher.process_request("some input", session_id="test-session")
+    # A2A discovery error should lead to fallback message
+    assert result == "I cannot find a suitable agent to handle your request at this time."
+    dispatcher._call_a2a_agent.assert_not_called() # Ensure call wasn't attempted
+
+@pytest.mark.asyncio
+async def test_error_a2a_call(mock_dispatcher_with_mock_resp_gen):
+    """3.6: A2A 호출 오류 테스트 (Mock)"""
+    dispatcher, _, mock_input_parser, mock_llm_client = mock_dispatcher_with_mock_resp_gen
+
+    mock_parsed = ParsedInput(original_text="q", original_language="en", english_text="query", intent="a2a_needed", domain="unknown")
+    mock_input_parser.process_input.return_value = mock_parsed
+
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+
+    # Mock successful discovery
+    mock_agent_card = {"name": "A2A_Agent", "a2a_endpoint": "http://a2a.test"}
+    dispatcher._discover_a2a_agents.return_value = [mock_agent_card]
+
+    # Simulate A2A call error
+    dispatcher._call_a2a_agent.side_effect = Exception("A2A Call Failed")
+
+    result = await dispatcher.process_request("some input", session_id="test-session")
+    # A2A call error is now caught within process_request, should return fallback
+    assert result == "I cannot find a suitable agent to handle your request at this time."
+    dispatcher._call_a2a_agent.assert_called_once_with(mock_agent_card, mock_parsed.english_text)
+
+@pytest.mark.asyncio
+async def test_error_sub_agent_access(mock_dispatcher_with_mock_resp_gen):
+    """3.6: 하위 에이전트 접근 오류 테스트 (Mock)"""
+    dispatcher, mock_response_gen, mock_input_parser, _ = mock_dispatcher_with_mock_resp_gen
+
+    invalid_agent_name = "NonExistentAgent"
+    delegation_info = {
+        "agent_name": invalid_agent_name,
+        "input_text": "test input",
+        "original_language": "en",
+        "required_tools": [],
+        "conversation_history": None
+    }
+
+    # Mock process_request to return info for an invalid agent
+    with patch('src.jarvis.core.dispatcher.JarvisDispatcher.process_request',
+               new_callable=AsyncMock, return_value=delegation_info):
+
+        dispatcher.current_original_language = "en" # Set language for ResponseGenerator
+        mock_ctx = MagicMock()
+        mock_ctx.user_content.parts[0].text = "some query"
+        mock_session = MagicMock(); mock_session.id = "error-session"
+        mock_ctx.session = mock_session
+
+        final_event = None
+        async for event in dispatcher._run_async_impl(mock_ctx):
+            final_event = event
+
+        assert final_event is not None
+        expected_error_msg = f"Error: Could not find agent {invalid_agent_name} to delegate to."
+        # Check that ResponseGenerator was called with the specific error
+        mock_response_gen.generate_response.assert_called_once_with(expected_error_msg, "en")
+        # Check the final event content (processed by the mock ResponseGenerator)
+        assert final_event.content.parts[0].text == f"Processed: {expected_error_msg} (Lang: en)"
+
+@pytest.mark.asyncio
+async def test_error_response_generator(mock_dispatcher_with_mock_resp_gen):
+    """3.6: 응답 생성기 오류 테스트 (Mock)"""
+    dispatcher, mock_response_gen, _, _ = mock_dispatcher_with_mock_resp_gen
+
+    # Simulate an error during response generation
+    mock_response_gen.generate_response.side_effect = Exception("Generator failed!")
+
+    # Trigger a scenario where ResponseGenerator is called (e.g., direct response)
+    direct_response = "Some direct message"
+    with patch('src.jarvis.core.dispatcher.JarvisDispatcher.process_request',
+               new_callable=AsyncMock, return_value=direct_response):
+
+        dispatcher.current_original_language = "fr"
+        mock_ctx = MagicMock()
+        mock_ctx.user_content.parts[0].text = "some query"
+        mock_session = MagicMock(); mock_session.id = "gen-error-session"
+        mock_ctx.session = mock_session
+
+        final_event = None
+        async for event in dispatcher._run_async_impl(mock_ctx):
+            final_event = event
+
+        assert final_event is not None
+        # Check that the raw fallback error message is in the event
+        assert final_event.content.parts[0].text == "Error: Failed to generate final response."
+        # Verify ResponseGenerator was called (even though it failed)
+        mock_response_gen.generate_response.assert_called_once_with(direct_response, "fr")
+
+@pytest.mark.asyncio
+async def test_error_process_request_unexpected(mock_dispatcher_with_mock_resp_gen):
+    """3.6: process_request 전체 오류 테스트 (Mock)"""
+    dispatcher, _, mock_input_parser, _ = mock_dispatcher_with_mock_resp_gen
+
+    # Mock a step inside process_request (e.g., prompt building) to raise an unexpected error
+    with patch('src.jarvis.core.dispatcher.JarvisDispatcher.get_llm_client') as mock_get_client:
+         # Mock input parser to return something valid initially
+         mock_parsed = ParsedInput(original_text="q", original_language="en", english_text="query")
+         mock_input_parser.process_input.return_value = mock_parsed
+         # Make get_llm_client raise an error *before* the LLM call
+         mock_get_client.side_effect = Exception("Unexpected internal error!")
+
+         result = await dispatcher.process_request("some input", session_id="test-session")
+         assert result == "Error: An unexpected internal error occurred while processing your request."
+
+@pytest.mark.asyncio
+async def test_error_run_async_impl_unexpected(mock_dispatcher_with_mock_resp_gen):
+    """3.6: _run_async_impl 전체 오류 테스트 (Mock)"""
+    dispatcher, mock_response_gen, _, _ = mock_dispatcher_with_mock_resp_gen
+
+    # Mock process_request itself to raise an unexpected error
+    # Use patch to mock the method on the class level to avoid Pydantic validation error
+    with patch.object(JarvisDispatcher, 'process_request', new_callable=AsyncMock) as mock_process_req:
+        mock_process_req.side_effect = Exception("Run impl unexpected error!")
+
+        dispatcher.current_original_language = "es"
+        mock_ctx = MagicMock()
+        mock_ctx.user_content.parts[0].text = "some query"
+        mock_session = MagicMock(); mock_session.id = "run-impl-error-session"
+        mock_ctx.session = mock_session
+
+        final_event = None
+        async for event in dispatcher._run_async_impl(mock_ctx):
+            final_event = event
+
+        assert final_event is not None
+        expected_error_msg = "Error: An unexpected error occurred."
+        # Check ResponseGenerator was called with the default fallback message
+        mock_response_gen.generate_response.assert_called_once_with(expected_error_msg, "es")
+        # Check the final event content (processed by the mock ResponseGenerator)
+        assert final_event.content.parts[0].text == f"Processed: {expected_error_msg} (Lang: es)" 

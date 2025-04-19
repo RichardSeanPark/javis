@@ -176,6 +176,16 @@
 - [-] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `agent_tool_map`에 정의된 올바른 툴 목록만 주입하는지 확인 (Mock 사용) # 현재 테스트는 위임 *정보* 반환까지만 검증
 - [-] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, 대화 이력 컨텍스트를 올바르게 주입하는지 확인 (Mock `ContextManager` 사용) # 현재 테스트는 위임 *정보* 반환까지만 검증
 
+## 3.6. 에러 핸들링 테스트 (`JarvisDispatcher`)
+
+- [X] **입력 파싱 오류 테스트 (Mock)**: `InputParserAgent.process_input` 호출 시 예외가 발생하도록 Mocking 했을 때, `process_request`가 "Error: Failed to parse your input." 메시지를 반환하는지 확인.
+- [X] **LLM 위임 결정 오류 테스트 (Mock)**: Dispatcher LLM (`generate_content_async`) 호출 시 예외가 발생하도록 Mocking 했을 때, `process_request`가 내부적으로 "NO_AGENT"로 처리하고 최종적으로 "I cannot find..." 메시지를 반환하는지 확인.
+- [X] **A2A 검색/호출 오류 테스트 (Mock)**: `_discover_a2a_agents` 또는 `_call_a2a_agent` 내부에서 HTTP 오류 등이 발생하도록 Mocking 했을 때, 해당 메서드가 에러 메시지/빈 리스트를 반환하고 `process_request`가 최종적으로 A2A 에이전트의 에러 메시지 또는 "I cannot find..." 메시지를 반환하는지 확인.
+- [X] **하위 에이전트 접근 오류 테스트 (Mock)**: `_run_async_impl`에서 존재하지 않는 `agent_name`으로 위임 시도 시, `KeyError`를 처리하고 `ResponseGenerator`를 통해 오류 이벤트(`Error: Could not find agent ...`)를 yield하는지 확인.
+- [X] **응답 생성기 오류 테스트 (Mock)**: `_run_async_impl`의 마지막 단계에서 `response_generator.generate_response` 호출 시 예외가 발생하도록 Mocking 했을 때, 최종적으로 "Error: Failed to generate final response." 텍스트를 포함한 Event를 yield하는지 확인.
+- [X] **`process_request` 전체 오류 테스트 (Mock)**: `process_request` 내부의 예상치 못한 지점에서 일반 `Exception`이 발생하도록 Mocking 했을 때, "Error: An unexpected internal error..." 메시지를 반환하는지 확인.
+- [X] **`_run_async_impl` 전체 오류 테스트 (Mock)**: `_run_async_impl` 내부의 예상치 못한 지점에서 일반 `Exception`이 발생하도록 Mocking 했을 때, `ResponseGenerator`를 통해 "Error: An unexpected error occurred." 메시지를 포함한 Event를 yield하는지 확인.
+
 ## 4. 도메인별 에이전트 모듈 계층 테스트
 
 ### 4.1. 코딩 에이전트 (`CodingAgent`) 테스트
@@ -328,39 +338,4 @@
     - [X] Agent Hub가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 빈 리스트가 반환되는지 확인
     - [X] 응답 JSON 파싱 중 예외 발생 시, 에러가 로깅되고 빈 리스트가 반환되는지 확인
 *   **`_call_a2a_agent` 메서드 테스트 (Mock httpx, Mock google_a2a)**
-    - [X] 유효한 `agent_card`와 `task_input`으로 호출 시, `agent_card`에서 `a2a_endpoint`를 올바르게 추출하는지 확인
-    - [X] `a2a_endpoint`가 없는 `agent_card`로 호출 시, 에러가 로깅되고 에러 메시지가 반환되는지 확인
-    - [X] `Task` 객체가 올바른 `task_id`, `status`으로 생성되고 `.model_dump()`로 직렬화되는지 확인 (수정된 Task 모델 기준)
-    - [X] `httpx.AsyncClient.post`가 올바른 `agent_endpoint`와 직렬화된 `task_payload`로 호출되는지 확인
-    - [X] A2A 에이전트가 성공적인 `Task` JSON (status: COMPLETED, artifacts 포함)을 반환할 때, `Task` 객체가 파싱되고 결과 텍스트(`artifacts[0].parts[0].text`)가 반환되는지 확인
-    - [X] A2A 에이전트가 실패 `Task` JSON (status: FAILED, status.message 포함)을 반환할 때, 에러가 로깅되고 에러 메시지가 반환되는지 확인
-    - [X] A2A 에이전트 연결 실패(`httpx.RequestError`) 시, 에러가 로깅되고 에러 메시지가 반환되는지 확인
-    - [X] A2A 에이전트가 4xx 또는 5xx 상태 코드(`httpx.HTTPStatusError`)를 반환할 때, 에러가 로깅되고 에러 메시지가 반환되는지 확인
-    - [X] 응답 JSON이 유효하지 않은 `Task` 형식일 때 (`pydantic.ValidationError`), 에러가 로깅되고 에러 메시지가 반환되는지 확인
-*   **`process_request` 내 A2A 연동 로직 테스트 (Mock)**
-    - [X] 내부 LLM 위임 결정 결과가 "NO_AGENT"일 때, `_discover_a2a_agents`가 **호출되지 않는지** 확인 (Placeholder 동작 확인)
-    - [X] `_discover_a2a_agents`가 에이전트 목록을 **반환하더라도**, `_call_a2a_agent`가 **호출되지 않고** "No suitable..." 메시지가 반환되는지 확인 (Placeholder 동작 확인)
-    - [X] `_call_a2a_agent`가 **호출되지 않으므로** 해당 결과 반환 테스트는 현재 무의미함
-    - [X] `_discover_a2a_agents`가 빈 목록을 반환했을 때, `_call_a2a_agent`가 호출되지 않고 "No suitable..." 메시지가 반환되는지 확인
-    - [X] A2A 검색(`_discover_a2a_agents`) 중 에러 발생 시 (HTTP 오류 등), 에러가 로깅되고 `_call_a2a_agent`가 호출되지 않으며 최종적으로 "No suitable..." 메시지가 반환되는지 확인 (Placeholder 동작 확인 - 로그는 발생 안 함)
-    - [X] A2A 호출(`_call_a2a_agent`) 중 에러 발생 시 (HTTP 오류, 파싱 오류, 실패 상태 등), 에러가 로깅되고 해당 에러 메시지가 `process_request`의 최종 반환값이 되는지 확인 (Placeholder 동작 확인 - 호출 안됨)
-
-### 7.5. Agent Card 정의 (`config/agent_cards/`)
-- [X] **7.5. Agent Card 정의 (`config/agent_cards/`)**:
-    - [X] 각 에이전트(Coding, QA)의 능력을 상세히 기술한 JSON 파일 생성
-    - [X] Agent Card에는 에이전트 이름, 설명, 지원하는 능력 목록, 입출력 형식, 인증 요구사항 등을 명시
-    - [X] `config/agent_cards/coding_agent_card.json` 파일이 존재하는지 확인
-    - [X] `coding_agent_card.json` 파일이 유효한 JSON 형식인지 확인
-    - [X] `coding_agent_card.json` 파일 내용에 필수 필드(name, description, url, version, capabilities, skills)가 포함되어 있는지 확인
-    - [X] `config/agent_cards/qa_agent_card.json` 파일이 존재하는지 확인
-    - [X] `qa_agent_card.json` 파일이 유효한 JSON 형식인지 확인
-    - [X] `qa_agent_card.json` 파일 내용에 필수 필드(name, description, url, version, capabilities, skills)가 포함되어 있는지 확인
-
-### 7.6. A2A Task 표준 적용
-- [X] **7.6. A2A Task 표준 적용**: 
-    - [X] 작업 요청/응답 시 `google-a2a-python` 라이브러리의 Task 관련 클래스 사용 (`common.types` 확인)
-    - [X] `Task`, `TaskStatus`, `TaskState` 등 A2A 표준 클래스를 활용하여 작업 생성 및 관리 (`_call_a2a_agent` 내 확인)
-    - [X] 작업 상태 추적 및 결과 처리 로직 구현 (`_call_a2a_agent` 내 `status.state` 확인 및 결과/오류 처리 로직)
-
----
-**참고:** 이 목록은 Vibe Coding을 위한 매우 상세한 가이드이며, 실제 구현 중 AI 어시스턴트와의 상호작용을 통해 각 단계를 진행하고 확인합니다. 필요에 따라 목록은 수정될 수 있습니다. 
+    - [X] 유효한 `agent_card`

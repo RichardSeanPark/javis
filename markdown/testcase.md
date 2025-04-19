@@ -234,6 +234,9 @@
 - [X] `translate_text` 함수 기본 번역 테스트 (영어 -> 한국어, Live API): "Hello"를 한국어로 번역 시 예상되는 결과(예: "안녕하세요")가 반환되는지 확인
 - [X] `translate_text` 함수 자동 소스 언어 감지 테스트 (영어 -> 프랑스어, Live API): "Hello"를 프랑스어로 번역(`source_language` 미지정) 시 예상되는 결과(예: "Bonjour")가 반환되는지 확인
 - [X] `src/jarvis/tools/__init__.py`에 `translate_tool`이 `available_tools` 리스트에 포함되어 있는지 확인
+- [X] **툴 주입 테스트**: `JarvisDispatcher._run_async_impl` 메서드 내에서 `KnowledgeQA_Agent`로 위임 시 `web_search_tool`, `translate_tool`이 `required_tools`에 포함되어 에이전트에 성공적으로 주입되는지 확인
+- [X] **주입된 툴 복원 테스트**: `JarvisDispatcher._run_async_impl` 내의 finally 블록에서 에이전트에 원래 툴 목록이 정상적으로 복원되는지 확인
+- [X] **에러 상황 툴 복원 테스트**: 에이전트 호출 중 예외가 발생하더라도 finally 블록에서 원래 툴이 복원되는지 확인
 
 ### 5.3. 웹 검색 툴 (`web_search_tool`) 테스트
 - [X] `src/jarvis/tools/web_search_tool.py` 파일에 `web_search_tool` ADK `FunctionTool` 객체가 정의되어 있는지 확인

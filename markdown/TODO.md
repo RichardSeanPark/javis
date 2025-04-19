@@ -173,7 +173,7 @@
 *   **5.2. 툴 레지스트리 및 주입 로직 (`src/jarvis/core/dispatcher.py`)**
     - [X] `src/jarvis/tools` 에서 `available_tools` 임포트
     - [X] Dispatcher가 하위 에이전트 호출 시, 해당 에이전트에 필요한 툴만 전달하는 로직 설계 (agent_tool_map 정의)
-    - [X] 실제 툴 주입 로직 구현 (Dispatcher 관점에서 에이전트의 `tools` 속성을 임시로 설정하고 복구하는 로직 확인)
+    - [X] (향후 구현) 실제 툴 주입 로직 구현
 *   **5.3. 컨텍스트 관리 (`src/jarvis/core/context_manager.py`)**
     - [X] **클래스 정의**: `ContextManager` 클래스 생성
     - [X] **대화 이력 관리**: 세션 ID별 대화 이력(사용자 입력, AI 응답, 원본 언어) 저장 및 검색 메서드 구현 (간단한 딕셔너리 또는 Redis 등 활용)

@@ -162,7 +162,7 @@
     - [X] **웹 검색 툴 (`src/jarvis/tools/web_search_tool.py`)**
         - [X] `web_search(query: str) -> str` 함수 정의
         - [X] 외부 검색 API (예: Google Custom Search API, Tavily API 등) 호출 로직 구현 (duckduckgo_search 사용)
-        - [X] 검색 결과 요약 또는 가공 로직 (필요시 LLM 추가 호출)
+        - [X] 검색 결과 요약 또는 가공 로직 (필요시 LLM 추가 호출) # <<< Mark as completed
         - [X] ADK `Tool` 객체 생성 (`description` 자동 설정됨)
     - [X] **코드 실행 툴 (`src/jarvis/tools/code_execution_tool.py`)**
         - [X] `execute_python_code(code: str) -> str` 함수 정의

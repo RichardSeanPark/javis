@@ -1071,4 +1071,132 @@ async def test_process_request_returns_delegation_info(mock_dispatcher_and_deps,
     # ... (이전 수정 사항 반영됨) ...
     pass
 
-# ... (다른 3.4 테스트 함수들 - 이전 수정 사항 반영됨) ... 
+# ... (다른 3.4 테스트 함수들 - 이전 수정 사항 반영됨) ...
+
+# --- Tests for Step 3.3.3: Actual A2A Logic (Implemented in process_request) ---
+
+@pytest.mark.asyncio
+async def test_process_request_calls_a2a_on_discovery_and_attempts_call(mock_dispatcher_and_deps, mocker):
+    """3.3.3: NO_AGENT 시 A2A 검색 후 발견 시 _call_a2a_agent 호출 시도 확인 (Mock)"""
+    dispatcher, mock_input_parser, mock_llm_client, _ = mock_dispatcher_and_deps
+    mock_agent_card = {"name": "DiscoveredA2A", "a2a_endpoint": "http://a2a.test/api"}
+
+    # Mock LLM to return NO_AGENT
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+
+    # Mock ParsedInput
+    mock_parsed = ParsedInput(original_text="q", original_language="en", english_text="english_q", intent="a2a_intent", domain="a2a_domain")
+    mock_input_parser.process_input.return_value = mock_parsed
+
+    # Mock _discover_a2a_agents to return the card
+    dispatcher._discover_a2a_agents = AsyncMock(return_value=[mock_agent_card])
+    # Mock _call_a2a_agent (we only check if it's called)
+    dispatcher._call_a2a_agent = AsyncMock(return_value="Mock A2A Result") # Return some value
+
+    await dispatcher.process_request("user query")
+
+    # Assert discovery was called
+    expected_capability = "Handle intent 'a2a_intent' in domain 'a2a_domain'"
+    dispatcher._discover_a2a_agents.assert_called_once_with(expected_capability)
+    # Assert call was attempted with the discovered card and english text
+    dispatcher._call_a2a_agent.assert_called_once_with(mock_agent_card, "english_q")
+
+@pytest.mark.asyncio
+async def test_process_request_returns_a2a_call_success_result(mock_dispatcher_and_deps, mocker):
+    """3.3.3: A2A 호출 성공 시 해당 결과가 process_request의 최종 반환값인지 확인 (Mock)"""
+    dispatcher, mock_input_parser, mock_llm_client, _ = mock_dispatcher_and_deps
+    mock_agent_card = {"name": "SuccessfulA2A", "a2a_endpoint": "http://success.test"}
+    expected_a2a_result = "A2A call was successful!"
+
+    # Mock LLM -> NO_AGENT
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+    # Mock ParsedInput
+    mock_input_parser.process_input.return_value = ParsedInput(original_text="q", original_language="en", english_text="eq")
+    # Mock discovery -> returns card
+    dispatcher._discover_a2a_agents = AsyncMock(return_value=[mock_agent_card])
+    # Mock call -> returns success message
+    dispatcher._call_a2a_agent = AsyncMock(return_value=expected_a2a_result)
+
+    final_result = await dispatcher.process_request("user query")
+
+    dispatcher._call_a2a_agent.assert_called_once()
+    assert final_result == expected_a2a_result
+
+@pytest.mark.asyncio
+async def test_process_request_returns_a2a_call_error_result(mock_dispatcher_and_deps, mocker):
+    """3.3.3: A2A 호출 실패(오류 메시지 반환) 시 해당 메시지가 최종 반환값인지 확인 (Mock)"""
+    dispatcher, mock_input_parser, mock_llm_client, _ = mock_dispatcher_and_deps
+    mock_agent_card = {"name": "FailingA2A", "a2a_endpoint": "http://fail.test"}
+    expected_error_message = "Error: A2A agent 'FailingA2A' returned status 500."
+
+    # Mock LLM -> NO_AGENT
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+    # Mock ParsedInput
+    mock_input_parser.process_input.return_value = ParsedInput(original_text="q", original_language="en", english_text="eq")
+    # Mock discovery -> returns card
+    dispatcher._discover_a2a_agents = AsyncMock(return_value=[mock_agent_card])
+    # Mock call -> returns error message
+    dispatcher._call_a2a_agent = AsyncMock(return_value=expected_error_message)
+
+    final_result = await dispatcher.process_request("user query")
+
+    dispatcher._call_a2a_agent.assert_called_once()
+    assert final_result == expected_error_message
+
+@pytest.mark.asyncio
+async def test_process_request_handles_discovery_exception(mock_dispatcher_and_deps, mocker, caplog):
+    """3.3.3: A2A 검색 중 예외 발생 시 최종 메시지 반환 및 로깅 확인 (Mock)"""
+    dispatcher, mock_input_parser, mock_llm_client, _ = mock_dispatcher_and_deps
+    caplog.set_level(logging.ERROR)
+
+    # Mock LLM -> NO_AGENT
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+    # Mock ParsedInput
+    mock_input_parser.process_input.return_value = ParsedInput(original_text="q", original_language="en", english_text="eq")
+    # Mock discovery -> raises exception
+    discovery_exception = httpx.RequestError("Discovery Network Error", request=MagicMock())
+    dispatcher._discover_a2a_agents = AsyncMock(side_effect=discovery_exception)
+    # Mock call (should not be called)
+    dispatcher._call_a2a_agent = AsyncMock()
+
+    final_result = await dispatcher.process_request("user query")
+
+    dispatcher._discover_a2a_agents.assert_called_once()
+    dispatcher._call_a2a_agent.assert_not_called()
+    assert final_result == "I cannot find a suitable agent to handle your request at this time."
+    assert "Error during delegation/A2A process: Discovery Network Error" in caplog.text
+
+@pytest.mark.asyncio
+async def test_process_request_handles_call_exception(mock_dispatcher_and_deps, mocker, caplog):
+    """3.3.3: A2A 호출 중 예외 발생 시 최종 메시지 반환 및 로깅 확인 (Mock)"""
+    dispatcher, mock_input_parser, mock_llm_client, _ = mock_dispatcher_and_deps
+    mock_agent_card = {"name": "ExceptionA2A", "a2a_endpoint": "http://exception.test"}
+    caplog.set_level(logging.ERROR)
+
+    # Mock LLM -> NO_AGENT
+    mock_response = MagicMock(spec=GenerateContentResponse)
+    mock_response.text = "NO_AGENT"
+    mock_llm_client.aio.models.generate_content.return_value = mock_response
+    # Mock ParsedInput
+    mock_input_parser.process_input.return_value = ParsedInput(original_text="q", original_language="en", english_text="eq")
+    # Mock discovery -> returns card
+    dispatcher._discover_a2a_agents = AsyncMock(return_value=[mock_agent_card])
+    # Mock call -> raises exception
+    call_exception = httpx.HTTPStatusError("Call Server Error", request=MagicMock(), response=MagicMock(status_code=503))
+    dispatcher._call_a2a_agent = AsyncMock(side_effect=call_exception)
+
+    final_result = await dispatcher.process_request("user query")
+
+    dispatcher._discover_a2a_agents.assert_called_once()
+    dispatcher._call_a2a_agent.assert_called_once()
+    assert final_result == "I cannot find a suitable agent to handle your request at this time."
+    # Check that the specific error from _call_a2a_agent was logged within the broader exception handler
+    assert "Error during delegation/A2A process: Call Server Error" in caplog.text 

@@ -10,6 +10,8 @@ from google.adk.agents import BaseAgent as Agent
 from google.adk.events import Event # <<< Import Event
 from google.genai.types import Content, Part # <<< Import Content, Part
 import httpx # <<< Import httpx for mocking A2A errors
+# Import actual tools for verification
+from src.jarvis.tools import code_execution_tool, web_search_tool, translate_tool
 
 @pytest.fixture
 def mock_dispatcher_with_mock_resp_gen(mocker):
@@ -283,4 +285,84 @@ async def test_error_run_async_impl_unexpected(mock_dispatcher_with_mock_resp_ge
         # Check ResponseGenerator was called with the default fallback message
         mock_response_gen.generate_response.assert_called_once_with(expected_error_msg, "es")
         # Check the final event content (processed by the mock ResponseGenerator)
-        assert final_event.content.parts[0].text == f"Processed: {expected_error_msg} (Lang: es)" 
+        assert final_event.content.parts[0].text == f"Processed: {expected_error_msg} (Lang: es)"
+
+# --- Test Case from markdown/testcase.md Section 5.5 (Tool Injection Logic) ---
+
+@pytest.mark.asyncio
+async def test_process_request_includes_correct_tools(mock_dispatcher_with_mock_resp_gen):
+    """5.5: process_request가 agent_tool_map 기반 올바른 툴 목록을 DelegationInfo에 포함하는지 확인"""
+    dispatcher, _, mock_input_parser, mock_llm_client = mock_dispatcher_with_mock_resp_gen
+
+    # -- Scenario 1: Delegate to CodingAgent --
+    agent_to_select = "CodingAgent"
+    expected_tools = dispatcher.agent_tool_map[agent_to_select]
+    expected_tool_names = sorted([tool.name for tool in expected_tools if hasattr(tool, 'name')])
+
+    # Mock input parsing result
+    mock_parsed = ParsedInput(original_text="code q", original_language="en", english_text="code query")
+    mock_input_parser.process_input.return_value = mock_parsed
+
+    # Mock LLM decision to select CodingAgent
+    mock_response_coding = MagicMock(spec=GenerateContentResponse)
+    mock_response_coding.text = agent_to_select
+    mock_llm_client.aio.models.generate_content.return_value = mock_response_coding
+
+    # Call process_request
+    result_coding = await dispatcher.process_request("code query", session_id="tool-test-session-1")
+
+    # Assertions for CodingAgent
+    assert isinstance(result_coding, dict)
+    assert result_coding.get("agent_name") == agent_to_select
+    assert "required_tools" in result_coding
+    # Extract names carefully, considering tools might not have .name directly
+    actual_tool_names_coding = sorted([
+        tool.name if hasattr(tool, 'name') 
+        else tool.function_declarations[0].name if hasattr(tool, 'function_declarations') and tool.function_declarations 
+        else 'UnknownTool' 
+        for tool in result_coding["required_tools"]
+    ])
+    assert actual_tool_names_coding == expected_tool_names
+    assert code_execution_tool.name in actual_tool_names_coding # Explicit check
+
+    # -- Scenario 2: Delegate to KnowledgeQA_Agent --
+    agent_to_select_qa = "KnowledgeQA_Agent"
+    # Debug: Print the agent_tool_map content for QA agent
+    # print(f"\nDEBUG: agent_tool_map for {agent_to_select_qa}: {[getattr(t, 'name', 'N/A') for t in dispatcher.agent_tool_map.get(agent_to_select_qa, [])]}") # Removed debug print
+    expected_tools_qa = dispatcher.agent_tool_map[agent_to_select_qa]
+    # Expected names should include function names for tools without direct .name
+    expected_tool_names_qa = sorted([
+        tool.name if hasattr(tool, 'name') 
+        else tool.function_declarations[0].name if hasattr(tool, 'function_declarations') and tool.function_declarations 
+        else 'UnknownTool' 
+        for tool in expected_tools_qa
+    ])
+
+    # Mock input parsing result (can reuse or create new)
+    mock_parsed_qa = ParsedInput(original_text="qa q", original_language="ko", english_text="qa query")
+    mock_input_parser.process_input.return_value = mock_parsed_qa # Update mock return value
+
+    # Mock LLM decision to select KnowledgeQA_Agent
+    mock_response_qa = MagicMock(spec=GenerateContentResponse)
+    mock_response_qa.text = agent_to_select_qa
+    # Reset the mock return value for the new scenario
+    mock_llm_client.aio.models.generate_content.return_value = mock_response_qa
+
+    # Call process_request again
+    result_qa = await dispatcher.process_request("qa query", session_id="tool-test-session-2")
+
+    # Assertions for KnowledgeQA_Agent
+    assert isinstance(result_qa, dict)
+    assert result_qa.get("agent_name") == agent_to_select_qa
+    assert "required_tools" in result_qa
+    # Extract names carefully, considering tools might not have .name directly
+    actual_tool_names_qa = sorted([
+        tool.name if hasattr(tool, 'name') 
+        else tool.function_declarations[0].name if hasattr(tool, 'function_declarations') and tool.function_declarations 
+        else 'UnknownTool' 
+        for tool in result_qa["required_tools"]
+    ])
+    assert actual_tool_names_qa == expected_tool_names_qa
+    # Check for tool presence using the extracted names list
+    assert web_search_tool.name in actual_tool_names_qa # Check by name
+    assert "translate_text" in actual_tool_names_qa # Check by function name 

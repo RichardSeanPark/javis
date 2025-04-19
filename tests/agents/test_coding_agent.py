@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 # Import necessary classes
 from google.adk.agents import LlmAgent
 from jarvis.agents.coding_agent import CodingAgent, DEFAULT_CODING_MODEL
+from src.jarvis.tools import code_execution_tool # Import the actual tool
 
 # Define the expected default values based on coding_agent.py
 EXPECTED_DEFAULT_NAME = "CodingAgent"
@@ -61,8 +62,9 @@ def test_coding_agent_default_attributes(coding_agent):
         f"기본 모델이 '{DEFAULT_CODING_MODEL}' 이어야 합니다. 실제: '{coding_agent.model}'"
     assert coding_agent.instruction == EXPECTED_DEFAULT_INSTRUCTION, \
         f"기본 지침이 '{EXPECTED_DEFAULT_INSTRUCTION}' 이어야 합니다. 실제: '{coding_agent.instruction}'"
-    # Tool은 아직 구현되지 않았으므로 비어 있거나 None 이어야 함 (LlmAgent 기본값 확인)
-    assert not coding_agent.tools, f"기본 tools 속성은 비어 있어야 합니다. 실제: {coding_agent.tools}"
+    # Check that the code execution tool is present by name
+    assert any(hasattr(tool, 'name') and tool.name == 'execute_python_code' for tool in coding_agent.tools), \
+        f"기본 tools 속성에 'execute_python_code' 툴이 포함되어야 합니다. 실제: {[getattr(t, 'name', None) for t in coding_agent.tools]}"
 
 def test_coding_agent_initialization_with_args():
     """
@@ -77,6 +79,7 @@ def test_coding_agent_initialization_with_args():
         name=custom_name,
         description=custom_desc,
         model=custom_model
+        # tools는 명시적으로 전달하지 않아도 __init__에서 추가됨
     )
 
     assert agent.name == custom_name
@@ -84,7 +87,52 @@ def test_coding_agent_initialization_with_args():
     assert agent.model == custom_model
     # Instruction should remain the default defined in the class
     assert agent.instruction == EXPECTED_DEFAULT_INSTRUCTION
-    assert not agent.tools # Tools are not passed or handled yet
+    # Check that the code execution tool is present by name
+    assert any(hasattr(tool, 'name') and tool.name == 'execute_python_code' for tool in agent.tools), \
+        f"인자 전달 시에도 tools 속성에 'execute_python_code' 툴이 포함되어야 합니다. 실제: {[getattr(t, 'name', None) for t in agent.tools]}"
+
+def test_coding_agent_instantiation():
+    """4.1: CodingAgent 인스턴스 생성 테스트 (기본값 사용)"""
+    try:
+        agent = CodingAgent()
+        assert agent is not None
+        assert agent.name == "CodingAgent"
+        assert agent.description == "Generates, analyzes, debugs, and optimizes code based on user requests in English."
+        # Add more assertions for default model, instruction etc. if needed
+    except Exception as e:
+        pytest.fail(f"CodingAgent instantiation with defaults failed: {e}")
+
+def test_coding_agent_initialization_registers_tool():
+    """4.1 / 툴 등록 테스트: CodingAgent.__init__에서 code_execution_tool이 tools 리스트에 명시적으로 추가되는지 확인"""
+    agent = CodingAgent()
+    # Check for the tool's presence by name instead of object identity
+    assert any(hasattr(tool, 'name') and tool.name == 'execute_python_code' for tool in agent.tools), \
+        f"tools 속성에 'execute_python_code' 툴이 포함되어야 합니다. 실제: {[getattr(t, 'name', None) for t in agent.tools]}"
+
+def test_coding_agent_instantiation_with_args():
+    """4.1: CodingAgent 인스턴스 생성 테스트 (인자 전달)"""
+    custom_name = "MyCoder"
+    custom_desc = "My description"
+    custom_model = "gemini-pro"
+    custom_instruction = "Be brief."
+    # Pass an empty tools list initially to ensure the agent adds its own
+    agent = CodingAgent(
+        name=custom_name,
+        description=custom_desc,
+        model=custom_model,
+        instruction=custom_instruction,
+        tools=[] # Pass empty list
+    )
+    assert agent.name == custom_name
+    assert agent.description == custom_desc
+    assert agent.model == custom_model
+    assert agent.instruction == custom_instruction
+    # Ensure the code execution tool was added even if an empty list was passed
+    # Check by name
+    assert any(hasattr(tool, 'name') and tool.name == 'execute_python_code' for tool in agent.tools), \
+        f"빈 tools 리스트 전달 시에도 'execute_python_code' 툴이 포함되어야 합니다. 실제: {[getattr(t, 'name', None) for t in agent.tools]}"
+    # Optionally, check the number of tools if no others should be present
+    assert len(agent.tools) == 1
 
 # TODO: Add tests for tool registration once implemented (Step 5)
 # TODO: Add tests for agent behavior (LLM calls, tool usage) once tools are implemented 

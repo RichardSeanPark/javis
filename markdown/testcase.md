@@ -264,7 +264,7 @@
     - [X] `CodingAgent` 키에 `code_execution_tool`이 포함되어 있는지 확인
     - [X] `KnowledgeQA_Agent` 키에 `web_search_tool`과 `translate_tool`이 포함되어 있는지 확인
 - [X] `JarvisDispatcher.process_request` 내부에 툴 주입 로직을 위한 TODO 주석이 존재하는지 확인 (코드 정적 분석)
-- [-] (향후 구현) 실제 툴 주입 로직 테스트: 특정 에이전트가 호출될 때 해당 에이전트에게 올바른 툴만 전달되는지 확인 (Mock 및 복잡한 설정 필요)
+- [X] 실제 툴 주입 로직 테스트 (Mock): `process_request`가 위임 대상 에이전트에게 `agent_tool_map` 기반의 올바른 툴 목록만 전달하는지 확인 (Mock 사용)
 
 ### 5.6. 컨텍스트 관리자 (`ContextManager`) 테스트 (`src/jarvis/core/context_manager.py`)
 - [X] `ContextManager` 인스턴스가 정상적으로 생성되는지 확인 (`session_histories`가 빈 `defaultdict`인지 확인)

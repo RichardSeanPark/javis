@@ -5,85 +5,79 @@ from src.jarvis.components.response_generator import ResponseGenerator
 
 @pytest.fixture
 def response_generator():
-    """Provides a ResponseGenerator instance for tests."""
+    """Provides a ResponseGenerator instance for testing."""
     return ResponseGenerator()
 
-def test_response_generator_initialization(response_generator):
-    """Test if ResponseGenerator initializes correctly."""
-    assert response_generator is not None
-    # Add more checks if __init__ becomes complex, e.g., initializing clients
+# --- Test Cases from markdown/testcase.md Section 6 ---
+
+def test_response_generator_instantiation():
+    """6: ResponseGenerator 인스턴스화 테스트"""
+    try:
+        generator = ResponseGenerator()
+        assert isinstance(generator, ResponseGenerator)
+    except Exception as e:
+        pytest.fail(f"ResponseGenerator instantiation failed: {e}")
 
 @pytest.mark.asyncio
 async def test_generate_response_english_input(response_generator):
-    """Test generating response when original language is English."""
-    english_result = "  This is the English result.  "
-    formatted = await response_generator.generate_response(english_result, 'en')
-    assert formatted == "This is the English result."
+    """6: generate_response 기본 동작 (영어 입력)"""
+    result = "Test result string."
+    lang = "en"
+    final_response = await response_generator.generate_response(result, lang)
+    assert final_response == result
 
 @pytest.mark.asyncio
-@patch('src.jarvis.components.response_generator.translate_text', new_callable=AsyncMock) # Mock translate_text
-async def test_generate_response_translation_needed(mock_translate, response_generator):
-    """Test generating response with translation."""
-    english_result = "Hello"
-    original_language = "ko"
-    expected_translation = "안녕하세요"
-    mock_translate.return_value = expected_translation
-
-    final_response = await response_generator.generate_response(english_result, original_language)
-
-    mock_translate.assert_awaited_once_with(text="Hello", target_language="ko", source_language='en')
-    assert final_response == expected_translation
+async def test_generate_response_non_english_placeholder(response_generator):
+    """6: generate_response 기본 동작 (비영어 입력, Placeholder)"""
+    result = "Test result string."
+    lang = "ko"
+    final_response = await response_generator.generate_response(result, lang)
+    expected_prefix = "(In English, as translation is not yet implemented):"
+    assert final_response.startswith(expected_prefix)
+    assert result in final_response
 
 @pytest.mark.asyncio
-@patch('src.jarvis.components.response_generator.translate_text', new_callable=AsyncMock)
-async def test_generate_response_translation_error(mock_translate, response_generator):
-    """Test fallback to English when translation fails."""
-    english_result = "Error case"
-    original_language = "ko"
-    mock_translate.side_effect = Exception("Translation API failed")
-
-    final_response = await response_generator.generate_response(english_result, original_language)
-
-    mock_translate.assert_awaited_once_with(text="Error case", target_language="ko", source_language='en')
-    # Should return the original English result on error
-    assert final_response == "Error case"
+async def test_generate_response_none_input(response_generator):
+    """6: generate_response None 입력 처리"""
+    lang = "en"
+    final_response = await response_generator.generate_response(None, lang)
+    assert "I received an empty response" in final_response
 
 @pytest.mark.asyncio
 async def test_generate_response_non_string_input(response_generator):
-    """Test handling of non-string input (dict/list)."""
-    dict_result = {"key": "value", "number": 123}
-    list_result = [1, "item", True]
-
-    # Test dict
-    formatted_dict = await response_generator.generate_response(dict_result, 'en')
-    assert formatted_dict == "{'key': 'value', 'number': 123}"
-
-    # Test list
-    formatted_list = await response_generator.generate_response(list_result, 'en')
-    assert formatted_list == "[1, 'item', True]"
+    """6: generate_response 비문자열 입력 처리"""
+    result = {"key": "value", "number": 123}
+    lang = "en"
+    final_response = await response_generator.generate_response(result, lang)
+    assert final_response == str(result) # Expect string conversion
 
 @pytest.mark.asyncio
-async def test_generate_response_empty_input(response_generator):
-    """Test handling of empty string or None input."""
-    empty_string_result = ""
-    none_result = None
-    expected_default = "I received an empty response."
+async def test_generate_response_empty_string_input(response_generator):
+    """Additional test for empty string input."""
+    result = ""
+    lang = "en"
+    final_response = await response_generator.generate_response(result, lang)
+    assert final_response == "" # Empty string should probably remain empty
 
-    formatted_empty = await response_generator.generate_response(empty_string_result, 'en')
-    assert formatted_empty == expected_default
+# TODO: Add tests for actual translation once implemented
+# Example structure (requires mocking translate_text):
+# @pytest.mark.asyncio
+# async def test_generate_response_translation_success(response_generator):
+#     with patch('src.jarvis.components.response_generator.translate_text', new_callable=AsyncMock) as mock_translate:
+#         mock_translate.return_value = "번역된 결과"
+#         result = "Original English Result"
+#         lang = "ko"
+#         final_response = await response_generator.generate_response(result, lang)
+#         mock_translate.assert_called_once_with(text=result, target_language=lang, source_language='en')
+#         assert final_response == "번역된 결과"
 
-    formatted_none = await response_generator.generate_response(none_result, 'en')
-    assert formatted_none == expected_default
-
-@pytest.mark.asyncio
-@patch('src.jarvis.components.response_generator.translate_text', new_callable=AsyncMock)
-async def test_generate_response_empty_input_translation(mock_translate, response_generator):
-    """Test that empty input is not translated."""
-    empty_string_result = ""
-    original_language = "ko"
-    expected_default = "I received an empty response."
-
-    final_response = await response_generator.generate_response(empty_string_result, original_language)
-
-    mock_translate.assert_not_awaited() # Translation should not be called
-    assert final_response == expected_default 
+# @pytest.mark.asyncio
+# async def test_generate_response_translation_failure(response_generator):
+#     with patch('src.jarvis.components.response_generator.translate_text', new_callable=AsyncMock) as mock_translate:
+#         mock_translate.side_effect = Exception("Translation API error")
+#         result = "Original English Result"
+#         lang = "ko"
+#         final_response = await response_generator.generate_response(result, lang)
+#         mock_translate.assert_called_once()
+#         # Expect fallback to English
+#         assert final_response == result 

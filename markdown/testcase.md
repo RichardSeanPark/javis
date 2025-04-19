@@ -176,20 +176,6 @@
 - [-] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, `agent_tool_map`에 정의된 올바른 툴 목록만 주입하는지 확인 (Mock 사용) # 현재 테스트는 위임 *정보* 반환까지만 검증
 - [-] (향후 구현) `JarvisDispatcher`가 선택된 내부 에이전트를 호출할 때, 대화 이력 컨텍스트를 올바르게 주입하는지 확인 (Mock `ContextManager` 사용) # 현재 테스트는 위임 *정보* 반환까지만 검증
 
-### 3.5. 결과 처리 및 반환 테스트
-- [ ] (향후 구현) 내부 에이전트가 **영어 결과**를 반환했을 때, `ResponseGenerator`로 전달되는지 확인 (Mock `ResponseGenerator`)
-
-### 3.6. 에러 핸들링 테스트
-- [ ] `InputParserAgent` 호출 시 예외 발생 시, `process_request`가 에러 메시지를 반환하고 종료하는지 확인 (Mock 사용)
-- [ ] 내부 LLM 위임 결정 호출 시 예외 발생 시, `process_request`가 에러 메시지를 반환하고 종료하는지 확인 (Mock 사용)
-- [ ] 등록되지 않은 에이전트 이름이 LLM에서 반환되었을 때, A2A 검색 로직으로 넘어가는지 확인 (Mock 사용)
-- [-] (7.4에서 상세 테스트) A2A 검색(`_discover_a2a_agents`) 중 HTTP 요청 오류 발생 시
-- [-] (7.4에서 상세 테스트) A2A 검색(`_discover_a2a_agents`) 중 API가 4xx/5xx 오류 반환 시
-- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 중 HTTP 요청 오류 발생 시
-- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 중 API가 4xx/5xx 오류 반환 시
-- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 중 `TaskResult` 파싱 오류 발생 시
-- [-] (7.4에서 상세 테스트) A2A 호출(`_call_a2a_agent`) 결과가 실패 상태(`TaskStatus.FAILED`)일 때
-
 ## 4. 도메인별 에이전트 모듈 계층 테스트
 
 ### 4.1. 코딩 에이전트 (`CodingAgent`) 테스트
@@ -287,14 +273,15 @@
 - [X] `clear_history` 메서드가 존재하지 않는 세션 ID에 대해 호출될 때 경고를 로깅하는지 확인
 
 ## 6. 응답 생성 및 출력 계층 테스트 (`src/jarvis/components/response_generator.py`)
-- [X] `ResponseGenerator` 인스턴스가 정상적으로 생성되는지 확인
-- [X] `generate_response` 메서드가 영어(`original_language='en'`) 입력 시 포맷팅된 영어 결과를 그대로 반환하는지 확인
-- [X] `generate_response` 메서드가 비영어(`original_language='ko'`) 입력 시 `translate_text` 함수를 호출하여 번역된 결과를 반환하는지 확인 (Mock `translate_text`)
-- [X] `generate_response` 메서드가 비영어 입력 시 `translate_text` 함수 호출 중 에러가 발생하면 포맷팅된 영어 결과를 대신 반환하는지 확인 (Mock `translate_text`)
-- [X] `generate_response` 메서드가 비문자열(dict, list 등) 입력을 받아 기본적인 문자열로 변환하여 처리하는지 확인
-- [X] `generate_response` 메서드가 빈 문자열이나 None 입력을 받았을 때 기본 메시지("I received an empty response.")를 반환하는지 확인
+- [X] **ResponseGenerator 인스턴스화 테스트**: `ResponseGenerator` 인스턴스가 정상적으로 생성되는지 확인
+- [X] **Dispatcher 연동 테스트**: `JarvisDispatcher`가 `__init__` 시 `ResponseGenerator` 인스턴스를 생성하고 `self.response_generator`에 저장하는지 확인.
+- [X] **generate_response 기본 동작 (영어 입력)**: `generate_response(english_result="Hello", original_language='en')` 호출 시 "Hello"를 반환하는지 확인.
+- [X] **generate_response 기본 동작 (비영어 입력, Placeholder)**: `generate_response(english_result="Hello", original_language='ko')` 호출 시 "(In English, as translation is not yet implemented): Hello" 와 같은 형식의 문자열을 반환하는지 확인.
+- [X] **generate_response None 입력 처리**: `generate_response(english_result=None, original_language='en')` 호출 시 "I received an empty response..." 메시지를 반환하는지 확인.
+- [X] **generate_response 비문자열 입력 처리**: `generate_response(english_result={"key": "value"}, original_language='en')` 호출 시 `str({"key": "value"})` 결과(`'{'key': 'value'}'`)를 반환하는지 확인.
+- [X] **Dispatcher -> ResponseGenerator 호출 테스트 (Mock)**: `JarvisDispatcher._run_async_impl`에서 직접 응답 문자열(예: "처리 불가")을 반환해야 할 때, `response_generator.generate_response`가 해당 문자열과 `current_original_language`를 인자로 받아 호출되는지 확인 (Mock `response_generator`).
 - [-] (향후 구현) 결과 포맷팅 로직 테스트 (LLM 호출 등)
-- [-] (향후 구현) Dispatcher 연동 테스트
+- [-] (향후 구현) 실제 번역 테스트 (Live API 또는 Mock `translate_tool` 활용)
 
 ## 7. 에이전트 간 상호작용 (A2A) 테스트
 

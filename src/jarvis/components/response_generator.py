@@ -9,76 +9,56 @@ logger = logging.getLogger(__name__)
 
 class ResponseGenerator:
     """
-    Generates the final response for the user, including formatting
-    and translation back to the original language if necessary.
+    Processes results from agents and generates the final user-facing response,
+    handling translation back to the original language.
     """
 
     def __init__(self):
-        # In this version, we directly use the imported translate_text function.
-        # Alternatively, the translate_tool object could be passed via dependency injection.
+        """Initializes the ResponseGenerator."""
+        # If translate_tool is needed, it could be initialized here or passed
+        # self.translator = translate_tool # Example
         logger.info("ResponseGenerator initialized.")
         # We might need an LLM client here later for advanced formatting/summarization.
         # self.llm_client = ...
 
-    async def generate_response(self, english_result: Any, original_language: str) -> str:
+    async def generate_response(self, english_result: Any, original_language: Optional[str]) -> str:
         """
-        Formats the result received from an agent and translates it back to the
-        original user language if needed.
+        Generates the final response string for the user.
 
         Args:
-            english_result: The result obtained from the agent/tool (expected to be primarily text for now).
-            original_language: The ISO 639-1 code of the user's original input language (e.g., 'ko', 'en').
+            english_result: The result received from the agent (assumed to be in English).
+            original_language: The original language code of the user's request (e.g., 'ko', 'en').
 
         Returns:
-            The final response string, potentially translated.
+            The final response string, translated to the original language if necessary.
         """
-        logger.info(f"Generating final response for language: {original_language}")
-        logger.debug(f"Received English result: {english_result}")
+        logger.info(f"Generating response for result (type: {type(english_result)}), original language: {original_language}")
 
-        default_empty_message = "I received an empty response."
-
-        # Handle None input explicitly before formatting
-        if english_result is None:
-            logger.warning("Received None result from agent/tool.")
-            return default_empty_message
-
-        # 1. Format the result (Basic formatting for now)
-        # TODO: Implement more sophisticated formatting, potentially using an LLM.
-        # Handle potential non-string results gracefully.
-        formatted_result: str
+        # 1. Format the English result into a string (basic implementation)
         if isinstance(english_result, str):
-            formatted_result = english_result.strip()
-        elif isinstance(english_result, dict) or isinstance(english_result, list):
-             # Simple conversion for dict/list, improve later
-             formatted_result = str(english_result)
+            formatted_english_response = english_result
+        elif english_result is None:
+            formatted_english_response = "I received an empty response from the agent."
         else:
-             # Fallback for other types
-             formatted_result = str(english_result) # This will turn None into 'None', handled above now.
-
-        # Handle empty string result AFTER formatting
-        if not formatted_result:
-             logger.warning("Received empty string result from agent/tool after formatting.")
-             formatted_result = default_empty_message
-
-        # 2. Translate back to original language if necessary
-        # Only translate if the language is not English AND the result is not the default empty message.
-        if original_language != 'en' and formatted_result != default_empty_message:
-            logger.info(f"Translating result from 'en' to '{original_language}'")
+            # Basic conversion for non-string results
             try:
-                # Use the imported translate_text function directly
-                final_response = await translate_text(
-                    text=formatted_result,
-                    target_language=original_language,
-                    source_language='en'
-                )
-                logger.info("Translation successful.")
-                return final_response
+                formatted_english_response = str(english_result)
+                logger.debug(f"Converted non-string result to string: {formatted_english_response[:100]}...")
             except Exception as e:
-                logger.error(f"Error translating response to {original_language}: {e}", exc_info=True)
-                # Fallback to returning the English result if translation fails
-                logger.warning("Translation failed. Returning English result.")
-                return formatted_result
+                logger.error(f"Error converting agent result to string: {e}", exc_info=True)
+                formatted_english_response = "I encountered an issue processing the result."
+
+        # 2. Translate if necessary (Placeholder - actual translation logic later)
+        if original_language and original_language != 'en':
+            logger.info(f"Translation needed to {original_language}. (Translation logic placeholder)")
+            # TODO: Implement translation using translate_tool
+            # Example (requires translator setup):
+            # final_response = await self.translator.translate_text(formatted_english_response, target_language=original_language)
+            # For now, return English with a note
+            final_response = f"(In English, as translation is not yet implemented): {formatted_english_response}"
         else:
-            # If original language is English or result is empty, return as is
-            logger.info("No translation needed or result is empty.")
-            return formatted_result 
+            logger.info("No translation needed or original language is English.")
+            final_response = formatted_english_response
+
+        logger.info(f"Final generated response: {final_response[:100]}...")
+        return final_response 

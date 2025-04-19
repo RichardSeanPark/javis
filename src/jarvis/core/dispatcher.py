@@ -5,7 +5,7 @@
 from google.adk.agents import LlmAgent, BaseAgent as Agent
 # from google.adk.models import LlmConfig # 더 이상 사용되지 않음
 from ..components.input_parser import InputParserAgent
-# from ..components.response_generator import ResponseGenerator # Import ResponseGenerator - 주석 처리
+from ..components.response_generator import ResponseGenerator # Import ResponseGenerator
 # from ..core.context_manager import ContextManager # Import ContextManager - 주석 처리
 from pydantic import Field # Field 임포트 추가
 from ..models.input import ParsedInput # ParsedInput 임포트 추가
@@ -88,7 +88,7 @@ class JarvisDispatcher(LlmAgent):
     model: str = Field(default=DEFAULT_MODEL_NAME) # Explicitly declare model field
     input_parser: InputParserAgent = Field(default_factory=InputParserAgent)
     sub_agents: Dict[str, Agent] = Field(default_factory=dict)
-    # response_generator: ResponseGenerator = Field(default_factory=ResponseGenerator) # 주석 처리
+    response_generator: ResponseGenerator = Field(default_factory=ResponseGenerator) # Add response_generator field
     # context_manager: ContextManager = Field(default_factory=ContextManager) # 주석 처리
     llm_clients: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     agent_tool_map: Dict[str, List[BaseTool]] = Field(default_factory=dict) # Added agent_tool_map
@@ -270,17 +270,27 @@ class JarvisDispatcher(LlmAgent):
                     delegated_agent_name = potential_agent_name
                     logger.info(f"Dispatcher LLM decided to delegate to internal agent: {delegated_agent_name}")
                 elif potential_agent_name == "NO_AGENT":
-                     logger.info("Dispatcher LLM indicated no suitable internal agent found.")
-                     # --- A2A Discovery Placeholder (Placeholder logic remains) ---
-                     logger.info("Attempting A2A agent discovery...")
+                     logger.info("Dispatcher LLM indicated no suitable internal agent found. Checking A2A...")
+                     # --- Replace A2A Discovery Placeholder with Actual Logic ---
                      needed_capability = f"Handle intent '{self.current_parsed_input.intent}' in domain '{self.current_parsed_input.domain}'"
                      discovered_agents = await self._discover_a2a_agents(needed_capability)
+
                      if discovered_agents:
-                         logger.info(f"Discovered {len(discovered_agents)} potential A2A agents.")
-                         # Keep delegated_agent_name as "NO_AGENT" until selection logic (Step 7)
+                         logger.info(f"Discovered {len(discovered_agents)} potential A2A agents. Selecting the first one.")
+                         # TODO: Implement more sophisticated A2A agent selection logic (Step 7)
+                         selected_a2a_agent_card = discovered_agents[0]
+                         agent_name_to_call = selected_a2a_agent_card.get('name')
+                         logger.info(f"Attempting to call A2A agent: {agent_name_to_call}")
+                         # Call the selected A2A agent
+                         # Ensure llm_input_text (English) is passed as task input
+                         a2a_result = await self._call_a2a_agent(selected_a2a_agent_card, llm_input_text)
+                         # Return the result directly from A2A agent (including potential errors)
+                         return a2a_result
                      else:
                          logger.info("No suitable A2A agents discovered.")
-                     # --- End A2A Discovery Placeholder ---
+                         # Keep delegated_agent_name as "NO_AGENT" if no A2A agent found
+                         delegated_agent_name = "NO_AGENT"
+                     # --- End A2A Logic Replacement ---
                 else:
                     logger.warning(f"Dispatcher LLM returned an unknown agent name: '{potential_agent_name}'. Treating as NO_AGENT.")
                     delegated_agent_name = "NO_AGENT"
@@ -288,14 +298,15 @@ class JarvisDispatcher(LlmAgent):
                 logger.error(f"Failed to get valid text response from delegation LLM. Response: {response}")
                 delegated_agent_name = "NO_AGENT"
         except Exception as e:
-            logger.error(f"Error during LLM call for delegation: {e}", exc_info=True)
+            # Log error during LLM call *or* A2A discovery/call phase
+            logger.error(f"Error during delegation/A2A process: {e}", exc_info=True)
             delegated_agent_name = "NO_AGENT"
 
         # 4. Return Result (DelegationInfo or message)
+        # This part is reached if internal delegation is decided OR if A2A fails
         if delegated_agent_name != "NO_AGENT" and delegated_agent_name in self.sub_agents:
             required_tools = self.agent_tool_map.get(delegated_agent_name, [])
-            # Use getattr for safety in logging tool names
-            logger.info(f"Preparing delegation info for '{delegated_agent_name}' with tools: {[getattr(t, 'name', 'Unnamed Tool') for t in required_tools]}")
+            logger.info(f"Preparing delegation info for internal agent '{delegated_agent_name}' with tools: {[getattr(t, 'name', 'Unnamed Tool') for t in required_tools]}")
             delegation_info: DelegationInfo = {
                 "agent_name": delegated_agent_name,
                 "input_text": llm_input_text,
@@ -304,11 +315,13 @@ class JarvisDispatcher(LlmAgent):
                 "conversation_history": conversation_history
             }
             return delegation_info
-        elif delegated_agent_name.startswith("A2A:"):
-             logger.warning("A2A delegation logic not fully implemented yet.")
-             return "A2A agent invocation requested (Runner should handle)."
+        # Removed A2A delegation info return, as A2A call is now handled directly above
+        # elif delegated_agent_name.startswith("A2A:"):
+        #      logger.warning("A2A delegation logic not fully implemented yet.")
+        #      return "A2A agent invocation requested (Runner should handle)."
         else:
-            logger.info("No suitable agent found (internal or A2A).")
+            # This is the fallback if internal agent selected OR A2A failed/not found
+            logger.info("No suitable internal or A2A agent could handle the request.")
             return "I cannot find a suitable agent to handle your request at this time."
 
     @override
@@ -368,8 +381,10 @@ class JarvisDispatcher(LlmAgent):
                      yield Event(
                          author=self.name,
                          content=Content(parts=[Part(text=f"[System] Delegating to {agent_name}. Runner should invoke.")])
+                         # Minimal Event fields to avoid validation errors
                      )
-                 finally: # Finally block correctly indented relative to try
+                 # The finally block MUST be at the same indentation level as the try block
+                 finally: # Correct indentation for finally
                      logger.debug(f"Restoring original tools and instruction for {agent_name}")
                      sub_agent.tools = original_tools
                      # Restore instruction only if it was originally present and modified
@@ -378,16 +393,22 @@ class JarvisDispatcher(LlmAgent):
 
              else: # Correct indentation for the 'else' block associated with 'if sub_agent:'
                  logger.error(f"Delegation target agent '{agent_name}' not found in sub_agents.")
-                 # Yield basic error event
-                 yield Event(author=self.name, content=Content(parts=[Part(text=f"Error: Could not find agent {agent_name} to delegate to.")]))
+                 # Generate error message using ResponseGenerator
+                 error_message = f"Error: Could not find agent {agent_name} to delegate to."
+                 final_response = await self.response_generator.generate_response(error_message, self.current_original_language)
+                 yield Event(author=self.name, content=Content(parts=[Part(text=final_response)]))
 
          elif isinstance(result, str): # Correct indentation for 'elif' associated with 'if isinstance(result, dict)...'
-             # Yield basic final message event
-             yield Event(author=self.name, content=Content(parts=[Part(text=result)]))
+             # Generate final message using ResponseGenerator
+             logger.info(f"Dispatcher generated direct response: {result[:100]}...")
+             final_response = await self.response_generator.generate_response(result, self.current_original_language)
+             yield Event(author=self.name, content=Content(parts=[Part(text=final_response)]))
          else: # Correct indentation for 'else' associated with 'if isinstance(result, dict)...'
              logger.error(f"process_request returned unexpected type: {type(result)}")
-             # Yield basic internal error event
-             yield Event(author=self.name, content=Content(parts=[Part(text="Error: Internal dispatcher error.")]))
+             # Generate internal error message using ResponseGenerator
+             internal_error_message = "Error: Internal dispatcher error."
+             final_response = await self.response_generator.generate_response(internal_error_message, self.current_original_language)
+             yield Event(author=self.name, content=Content(parts=[Part(text=final_response)]))
 
     # --- A2A Discovery and Call Methods ---
     async def _discover_a2a_agents(self, capability: str) -> List[Dict[str, Any]]:
